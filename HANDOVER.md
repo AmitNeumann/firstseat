@@ -14,8 +14,8 @@ zero prior context. Read it top to bottom before making changes.
 | | |
 | --- | --- |
 | **Current branch** | `feat/auth` — pushed to GitHub, **not merged to `main`** |
-| **Latest commit** | `498c845` "Add Supabase Auth signup, login, and users row on first sign-in" |
-| **Working tree** | clean |
+| **The auth feature commit** | `498c845` "Add Supabase Auth signup, login, and users row on first sign-in" — the whole feature in one commit. Run `git log --oneline -5` for anything after it (documentation commits) |
+| **Working tree** | clean at the time of writing; check `git status` |
 | **What works** | landing page, signup, login, logout, email confirmation, protected `/dashboard`, `users` row created on first sign-in |
 | **What does not exist yet** | watches (the actual product), restaurants/release-rules UI, drop alerts, notifications, any tests |
 | **Live site** | https://firstseat-lemon.vercel.app — still the **old placeholder** from `main`; the auth work is not deployed |
@@ -272,8 +272,9 @@ firstseat/
 ### Git history
 
 ```
-* 498c845  Add Supabase Auth signup, login, and users row on first sign-in   ← feat/auth HEAD
-|          (this commit is the whole auth feature; 25 files, +1266)
+  (feat/auth may have later documentation-only commits — run git log --oneline -8)
+* 498c845  Add Supabase Auth signup, login, and users row on first sign-in
+|          the whole auth feature in one commit; 25 files, +1266
 * 7857ff6  Add project handover document                                     ← main HEAD
 * 2a92e42  Add Prisma singleton and Supabase Auth clients
 * 499a477  Add Prisma schema, first migration, and Supabase database config
@@ -281,8 +282,8 @@ firstseat/
 * 69b6e76  Initial commit from Create Next App
 ```
 
-`feat/auth` is one commit ahead of `main` and tracks `origin/feat/auth`. Nothing has diverged,
-so the eventual merge is a fast-forward. See §0 before merging.
+`feat/auth` is ahead of `main` and tracks `origin/feat/auth`. Nothing has diverged, so the
+eventual merge is a fast-forward. See §0 before merging.
 
 ---
 
