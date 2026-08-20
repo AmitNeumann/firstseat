@@ -9,6 +9,36 @@ zero prior context. Read it top to bottom before making changes.
 
 ---
 
+## 0. Start here — state as of this update
+
+| | |
+| --- | --- |
+| **Current branch** | `feat/auth` — pushed to GitHub, **not merged to `main`** |
+| **Latest commit** | `498c845` "Add Supabase Auth signup, login, and users row on first sign-in" |
+| **Working tree** | clean |
+| **What works** | landing page, signup, login, logout, email confirmation, protected `/dashboard`, `users` row created on first sign-in |
+| **What does not exist yet** | watches (the actual product), restaurants/release-rules UI, drop alerts, notifications, any tests |
+| **Live site** | https://firstseat-lemon.vercel.app — still the **old placeholder** from `main`; the auth work is not deployed |
+
+### 🔴 Two things must happen before `feat/auth` is merged to `main`
+
+1. **Add the four environment variables to Vercel** (§7 lists them). `src/proxy.ts` runs on
+   nearly every request and throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are missing, so
+   merging without them returns 500 for **the entire site**, not just database-backed pages.
+2. **Add the redirect allow-list entries in Supabase** (§6), or confirmation emails will send
+   people to the wrong URL.
+
+Merging is a deliberate act: `main` auto-deploys. The branch was pushed separately precisely
+so the live placeholder stayed up while this was unfinished.
+
+### Still unverified
+
+The **real email round trip** has never been run: no one has actually signed up with a live
+inbox, opened the confirmation link, and landed on `/dashboard`. Everything around it is
+verified (§5), but do this first — it is the one gap in the auth work.
+
+---
+
 ## 1. What FirstSeat is
 
 **The problem.** Tables at popular restaurants are released on a fixed schedule — for example,
@@ -45,15 +75,21 @@ from manually tracking release schedules across several booking platforms.
 | Database | Supabase Postgres (free plan, London / eu-west-2) | ✅ tables created |
 | ORM | Prisma 7.9.1 + `@prisma/adapter-pg` | ✅ connected and verified |
 | Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, `users` row on first sign-in |
-| Hosting | Vercel, auto-deploys on push to `main` | ✅ live |
+| Hosting | Vercel, auto-deploys on push to `main` | ✅ live (serving `main`, i.e. the placeholder) |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
+| AI parse endpoint | provider not chosen yet | 🔜 planned, see §5 |
+| Testing | none installed | ❌ Vitest + Playwright suggested |
 
 ### Live locations
 
 - **GitHub (private):** https://github.com/AmitNeumann/firstseat
-- **Live site:** https://firstseat-lemon.vercel.app — ⚠️ still serving the old placeholder;
-  the auth work below is committed locally but **not yet pushed**, and must not be pushed
-  before the environment variables exist on Vercel (see §6).
+  - `main` — last commit `7857ff6`, the placeholder site. This is what is deployed.
+  - `feat/auth` — last commit `498c845`, all the authentication work. Pushed, not merged.
+  - Open a PR at https://github.com/AmitNeumann/firstseat/pull/new/feat/auth
+- **Live site:** https://firstseat-lemon.vercel.app — ⚠️ still serving the old placeholder,
+  because the auth work is on a branch. Vercel also builds a **preview URL** for `feat/auth`;
+  that preview will 500 until the environment variables are added, which is the safe place to
+  find that out (see §0).
 - **Supabase:** project on the free plan, London region. Connection strings are in `.env.local`
   (never committed). The Postgres host is the Supabase connection pooler.
 
@@ -235,17 +271,18 @@ firstseat/
 
 ### Git history
 
-⚠️ The authentication work described in §5 is **uncommitted** in the working tree. Review it,
-then commit and push — but read the Vercel environment variable warning in §6 first, because
-pushing to `main` deploys immediately.
+```
+* 498c845  Add Supabase Auth signup, login, and users row on first sign-in   ← feat/auth HEAD
+|          (this commit is the whole auth feature; 25 files, +1266)
+* 7857ff6  Add project handover document                                     ← main HEAD
+* 2a92e42  Add Prisma singleton and Supabase Auth clients
+* 499a477  Add Prisma schema, first migration, and Supabase database config
+* 0b89c4c  Replace default homepage with FirstSeat placeholder
+* 69b6e76  Initial commit from Create Next App
+```
 
-```
-7857ff6  Add project handover document
-2a92e42  Add Prisma singleton and Supabase Auth clients
-499a477  Add Prisma schema, first migration, and Supabase database config
-0b89c4c  Replace default homepage with FirstSeat placeholder
-69b6e76  Initial commit from Create Next App
-```
+`feat/auth` is one commit ahead of `main` and tracks `origin/feat/auth`. Nothing has diverged,
+so the eventual merge is a fast-forward. See §0 before merging.
 
 ---
 
@@ -307,7 +344,15 @@ Known limitations, worth mentioning before someone finds them for you:
   already handles the `recovery` and `email_change` link types, but there is no UI.
 - **No rate limiting of our own.** Signup and login lean on Supabase's built-in limits.
 
-### Immediate next step: watches
+### Immediate next step: watch creation, then an AI natural-language parse endpoint
+
+Two pieces, deliberately in this order. The watch form is the product; the AI endpoint is a
+faster way to fill it in. **Build the form first and make it work on its own** — if the AI
+layer comes first, there is nothing for it to submit to, and a demo where the only path to
+creating a watch runs through a model API is a demo that breaks when that API is slow, down,
+rate-limited or out of credit.
+
+#### Part 1 — Watch creation (the deterministic path)
 
 The data model's centre of gravity, and the first thing a user actually gets value from.
 
@@ -323,8 +368,73 @@ The data model's centre of gravity, and the first thing a user actually gets val
 Restaurants and ReleaseRules have no UI yet, so seed a handful by hand first — a Watch
 cannot be created without a Restaurant to point at.
 
-After watches, the order is: seed Restaurants and ReleaseRules → compute DropAlerts →
-send Notifications.
+Follow the shape the auth code already established, so the codebase stays consistent:
+a Zod schema in `src/lib/watches/schemas.ts`, Server Actions in `src/lib/watches/actions.ts`
+that begin with `await requireAppUser()`, and a `FormState` returned to `useActionState`.
+
+#### Part 2 — AI natural-language parse endpoint
+
+**The idea.** The user types one sentence — *"table for 2 at Gymkhana next Friday for dinner"*
+— and it is turned into the four structured fields the form needs, which they then confirm.
+
+**The flow, and the rule that matters most:**
+
+```
+free text ──▶ model ──▶ raw JSON ──▶ Zod parse ──▶ resolve restaurant name to a
+                                          │         restaurants row
+                                          │
+                                    (reject if invalid)
+                                          ▼
+                              pre-filled form the user CONFIRMS
+                                          ▼
+                                  existing createWatch action
+```
+
+**The model output is untrusted input.** It is a string from a remote service that can
+hallucinate a restaurant that does not exist, a 400-person party, or a date in 1987. It must
+go through Zod exactly like a form submission, and it must never reach Prisma directly. The
+parse endpoint's job ends at *proposing* values; the existing, already-validated
+`createWatch` action is still the only thing that writes a Watch.
+
+**Design constraints to respect:**
+
+- **The parse result is a suggestion, not a submission.** Show the user the parsed fields and
+  make them confirm. This is both a correctness safeguard and a much better demo — you can
+  show it getting something slightly wrong and the user fixing it.
+- **Require a signed-in user.** `await requireAppUser()` as the first line. Every call costs
+  real money, so an unauthenticated endpoint is someone else's free model access.
+- **Rate-limit per user.** There is none anywhere in the app today (§5 limitations). This is
+  the first endpoint where its absence costs money rather than just capacity.
+- **Relative dates need the user's timezone.** "Next Friday" is only meaningful in a zone —
+  this is exactly why `users.timezone` is captured at signup. Pass it into the prompt and
+  resolve the date server-side; do not let the model guess today's date.
+- **Restaurant resolution is a database problem, not a model problem.** The model returns a
+  name; our code matches it against `restaurants`. Decide explicitly what happens on no match
+  or an ambiguous match — probably "we don't track that restaurant yet", not silently creating
+  a row.
+- **The API key is server-only.** A plain `OPENAI_API_KEY`-style variable, never
+  `NEXT_PUBLIC_*` (§6 explains why that prefix ships to the browser). Add it to `.env.example`
+  as a placeholder and to Vercel.
+
+**Decisions still to make** — these were not settled, so choose and record them here:
+
+| Decision | Notes |
+| --- | --- |
+| Which provider and model | Cheapest capable model is plenty; this is short-string extraction, not reasoning |
+| Route Handler or Server Action | A Route Handler under `src/app/api/` is easier to test with `curl` and to rate-limit; a Server Action needs less wiring |
+| Structured output method | Prefer the provider's JSON/structured-output mode over parsing prose, then still validate with Zod |
+| Failure behaviour | On timeout or a bad response, fall back to the plain form rather than blocking the user |
+| Cost ceiling | Free-tier friendly: cap input length and calls per user per day |
+
+This is also a strong presentation beat: the brief encourages using AI tools, and "I used a
+model for the fuzzy part and kept the deterministic parts deterministic" is a defensible
+architectural decision rather than a gimmick.
+
+#### After that
+
+Seed Restaurants and ReleaseRules → compute DropAlerts from Watch × ReleaseRule → send
+Notifications. Also still outstanding: the first tests (§8, deliverables 5 and 6), which have
+no framework installed yet.
 
 ---
 
@@ -343,12 +453,12 @@ Every Supabase + Next.js tutorial you will find still says `middleware.ts`. The 
 refresh lives in `src/proxy.ts`; a build lists it as `ƒ Proxy (Middleware)`. There is a
 codemod (`npx @next/codemod@canary middleware-to-proxy .`) if you ever paste in old code.
 
-**🔴 The env vars are not on Vercel yet, and this is now deployment-blocking.** It used to be
+**🔴 The env vars are not on Vercel yet, and this blocks merging `feat/auth`.** It used to be
 harmless because nothing touched Supabase. It no longer is: `src/proxy.ts` runs on nearly
 every request and throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are missing, so deploying
-without them takes down **the whole site**, not just the pages that use the database. Add all
-four under **Vercel → Project Settings → Environment Variables** *before* the next push.
-`DIRECT_URL` is only needed there if migrations are run from CI.
+without them returns 500 for **the whole site**, not just the pages that use the database. Add
+all four under **Vercel → Project Settings → Environment Variables** *before* merging to
+`main`. `DIRECT_URL` is only needed there if migrations are run from CI.
 
 **🟠 Set the Supabase redirect allow-list too.** Supabase only redirects to URLs on its own
 allow-list. Add `https://firstseat-lemon.vercel.app/**` and `http://localhost:3000/**` under
@@ -387,6 +497,12 @@ once.
 **🟠 `NEXT_PUBLIC_*` vars must be accessed as literals** — `process.env.NEXT_PUBLIC_SUPABASE_URL`,
 never `process.env[name]`. Next.js inlines them at build time and cannot resolve dynamic lookups
 in browser code.
+
+**🔴 `NEXT_PUBLIC_` means "public".** The prefix is what tells Next.js to inline the value into
+the JavaScript sent to the browser, where anyone can read it. That is fine for the Supabase
+anon key, which is designed for it. It is **not** fine for anything billable or privileged —
+when the AI parse endpoint arrives, its API key must be a plain server-only variable, and the
+Supabase `service_role` key must never appear in one either.
 
 **🟠 The generated Prisma client is git-ignored.** It lives in `src/generated/prisma`. After
 cloning, or after any schema change, run `npx prisma generate`. Vercel handles this via the
@@ -443,6 +559,13 @@ placeholders. **Never commit real values; never paste them into a chat.**
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Supabase Auth |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page (anon / publishable key) | Supabase Auth |
 
+`.env.example` also documents one optional variable, `NEXT_PUBLIC_SITE_URL`, commented out.
+It is normally unnecessary: the signup action reads the request's `Origin` header, which is
+already correct on localhost, previews and production alike.
+
+The AI parse endpoint in §5 will add a fifth variable for its API key. It must **not** carry
+the `NEXT_PUBLIC_` prefix — see §6.
+
 The anon/publishable key is safe to expose to the browser by design. The **`service_role`
 key must never** be used in a `NEXT_PUBLIC_` variable — it bypasses RLS. It is not needed today.
 
@@ -458,13 +581,13 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 | # | Deliverable | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Link to app on Vercel | ✅ **Done** | https://firstseat-lemon.vercel.app (placeholder only) |
-| 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders) |
-| 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows |
+| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder — auth is on `feat/auth`. Merging it (after §0) is what makes this deliverable real |
+| 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders before submitting) |
+| 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, the auth flow, validation and error handling are captured here; still needs the same for watches, plus state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI |
-| 6 | Test code | ❌ **Outstanding** | No test framework installed yet. Suggested: Vitest + React Testing Library for units, Playwright for E2E |
-| 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, static prerendering, pagination plans |
+| 6 | Test code | ❌ **Outstanding** | No test framework installed yet. Suggested: Vitest + React Testing Library for units, Playwright for E2E. Best first targets are pure and already written: the Zod schemas, `safeNextPath`, `confirmErrorMessage`, `readTimezone` |
+| 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and per-user rate limiting once the AI endpoint exists |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
 | 10 | 10–15 min presentation | ❌ **Outstanding** | Product, problem, users, business value, architecture, DB, flows, tests, scale, security, what you'd improve |
@@ -473,8 +596,10 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
-- **Working product features.** Authentication now works end to end. Watches — the thing the
-  product is actually for — are still missing, and remain the biggest gap.
+- **Working product features.** Authentication is built (on `feat/auth`). Watches — the thing
+  the product is actually for — are still missing, and remain the biggest gap. The AI
+  natural-language parse endpoint (§5) is planned on top of them, and also covers the brief's
+  "which external libraries or services did you integrate, and why".
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -498,8 +623,13 @@ npx prisma studio                                    # browse/edit data in a loc
 npx prisma db pull --print                           # print the LIVE db structure (verification)
 npx prisma migrate deploy                            # apply migrations in CI/production
 
-# Git
-git add -A && git commit -m "message" && git push    # main tracks origin/main
+# Git — currently on feat/auth, which tracks origin/feat/auth
+git status -sb                                       # branch + tracking + dirty files
+git add -A && git commit -m "message" && git push
+git log --oneline --graph --all -8                   # see how feat/auth sits against main
+
+# Merging feat/auth to main — ONLY after the two steps in §0. This deploys.
+git checkout main && git merge --ff-only feat/auth && git push
 
 # Verification habits worth keeping
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000
