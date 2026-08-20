@@ -9,18 +9,9 @@ import {
   SignupSchema,
   type AuthFormState,
 } from "@/lib/auth/schemas";
+import { field } from "@/lib/form-data";
 import { getSiteOrigin } from "@/lib/site-origin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-/**
- * `FormData.get` returns `null` for a field that was never submitted, but Zod only applies
- * a schema default for `undefined`.
- */
-function field(formData: FormData, name: string): string | undefined {
-  const value = formData.get(name);
-
-  return typeof value === "string" ? value : undefined;
-}
 
 export async function signup(
   _previousState: AuthFormState,
