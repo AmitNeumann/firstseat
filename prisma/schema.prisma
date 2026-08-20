@@ -99,7 +99,11 @@ model ReleaseRule {
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   dropAlerts DropAlert[]
 
-  @@index([restaurantId])
+  // At most one rule per platform per restaurant. This is what lets the seed script be
+  // re-run safely: it can update the rule in place instead of guessing whether the one it
+  // finds is the same one it wrote last time. It also replaces the plain index on
+  // restaurantId, whose queries this unique index already serves as its leading column.
+  @@unique([restaurantId, platform])
   @@map("release_rules")
 }
 

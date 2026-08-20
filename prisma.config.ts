@@ -9,6 +9,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // Also runnable on its own as `npm run db:seed`. Prisma calls it after
+    // `migrate reset`, so a rebuilt database comes back with its restaurants.
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     // Migrations run DDL, which is unreliable over Supabase's transaction pooler.

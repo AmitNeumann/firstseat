@@ -1,17 +1,6 @@
 import * as z from "zod";
 
-/**
- * `Intl` is the only IANA timezone database available at runtime without a dependency:
- * constructing a formatter with an unknown zone throws.
- */
-function isKnownTimezone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en-GB", { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { isKnownTimezone } from "@/lib/time";
 
 /** Matches the `users.timezone` column default in `prisma/schema.prisma`. */
 export const DEFAULT_TIMEZONE = "Europe/London";
