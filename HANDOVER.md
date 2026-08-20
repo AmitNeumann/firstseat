@@ -3,7 +3,7 @@
 This document is the single source of truth for continuing work on FirstSeat. It assumes
 zero prior context. Read it top to bottom before making changes.
 
-**Last updated:** 19 August 2026
+**Last updated:** 20 August 2026
 **Course deadline:** 6 September 2026
 **Course brief:** `~/Desktop/fullstack project.docx` (RUNI CS 2026, "Become a Full-Stack Engineer")
 
@@ -39,20 +39,36 @@ from manually tracking release schedules across several booking platforms.
 | --- | --- | --- |
 | Framework | Next.js 16.3.1 (App Router, Turbopack) | ✅ working |
 | Language | TypeScript 5 (strict) | ✅ |
-| UI | Tailwind CSS v4 | ✅ (no custom UI built yet) |
+| UI | Tailwind CSS v4 | ✅ landing, signup, login, dashboard |
 | Linting | ESLint 9 (`eslint-config-next`) | ✅ passing |
+| Validation | Zod 4.4.3 | ✅ used by the auth forms |
 | Database | Supabase Postgres (free plan, London / eu-west-2) | ✅ tables created |
 | ORM | Prisma 7.9.1 + `@prisma/adapter-pg` | ✅ connected and verified |
-| Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ⚠️ clients written, **no login UI yet** |
+| Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, `users` row on first sign-in |
 | Hosting | Vercel, auto-deploys on push to `main` | ✅ live |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 
 ### Live locations
 
 - **GitHub (private):** https://github.com/AmitNeumann/firstseat
-- **Live site:** https://firstseat-lemon.vercel.app — currently shows only "FirstSeat — coming soon"
+- **Live site:** https://firstseat-lemon.vercel.app — ⚠️ still serving the old placeholder;
+  the auth work below is committed locally but **not yet pushed**, and must not be pushed
+  before the environment variables exist on Vercel (see §6).
 - **Supabase:** project on the free plan, London region. Connection strings are in `.env.local`
   (never committed). The Postgres host is the Supabase connection pooler.
+
+### Supabase Auth settings that shape the code
+
+Read back from `GET /auth/v1/settings` on the live project, not assumed:
+
+| Setting | Value | Consequence |
+| --- | --- | --- |
+| `mailer_autoconfirm` | `false` | **Email confirmation is required.** `signUp` returns no session; the user must open the emailed link, which lands on `/auth/confirm`. |
+| `external.email` | `true` | Email + password is the only enabled sign-in method. |
+| `disable_signup` | `false` | Public signup is open. |
+
+If you switch confirmation off in the dashboard, signup starts returning a session directly
+and `signup()` will redirect straight to `/dashboard`. Both paths are already handled.
 
 ### Deployment pipeline
 
@@ -164,22 +180,67 @@ firstseat/
 │       ├── migration_lock.toml
 │       └── 20260819180426_init/migration.sql   ← the CREATE TABLE statements
 └── src/
+    ├── proxy.ts             ← refreshes the auth session cookie on every request (§6)
     ├── app/
-    │   ├── layout.tsx       ← root layout, fonts, metadata (title "FirstSeat")
-    │   ├── page.tsx         ← placeholder homepage: "FirstSeat — coming soon"
-    │   ├── globals.css      ← Tailwind v4 import + @theme config (no tailwind.config.js in v4)
-    │   └── favicon.ico
+    │   ├── layout.tsx       ← root layout, fonts, metadata
+    │   ├── page.tsx         ← landing page; CTA depends on whether you are signed in
+    │   ├── globals.css      ← Tailwind v4 import + @theme tokens (no tailwind.config.js in v4)
+    │   ├── favicon.ico
+    │   ├── (auth)/          ← route group: adds a layout without adding a path segment
+    │   │   ├── layout.tsx   ← centred card frame
+    │   │   ├── login/page.tsx
+    │   │   └── signup/page.tsx
+    │   ├── auth/confirm/route.ts   ← where the emailed confirmation link lands
+    │   └── dashboard/page.tsx      ← protected; calls requireAppUser()
+    ├── components/auth/
+    │   ├── form-fields.tsx  ← Field / FormAlert / SubmitButton (presentational)
+    │   ├── login-form.tsx   ← Client Component, useActionState
+    │   ├── signup-form.tsx  ← Client Component, useActionState
+    │   └── sign-out-button.tsx
     ├── generated/prisma/    ← GENERATED, git-ignored, rebuilt by `prisma generate`
     └── lib/
         ├── prisma.ts        ← Prisma client singleton (see §6)
+        ├── site-origin.ts   ← absolute origin for links inside auth emails
+        ├── auth/
+        │   ├── dal.ts       ← getAuthUser, ensureAppUser, getAppUser, requireAppUser
+        │   ├── actions.ts   ← "use server": signup, login, logout
+        │   ├── schemas.ts    ← Zod schemas + AuthFormState
+        │   └── confirm-errors.ts  ← fixed set of confirmation-failure messages
         └── supabase/
+            ├── env.ts       ← the two NEXT_PUBLIC_ vars, read and checked in one place
             ├── client.ts    ← Supabase client for Client Components (browser)
-            └── server.ts    ← per-request server client + getCurrentUser()
+            └── server.ts    ← per-request server client
 ```
+
+### How a sign-in actually flows
+
+```
+/signup  ──signup() action──▶ supabase.auth.signUp
+                                    │ (confirmation required)
+                                    ▼
+                            "check your email"
+                                    │  user opens link
+                                    ▼
+       /auth/confirm ──exchangeCodeForSession──▶ session cookies written
+                                    │
+                                    ▼
+                          ensureAppUser(authUser)
+                        prisma users row, id = auth.users.id
+                                    │
+                                    ▼
+                              /dashboard
+```
+
+`/login` takes the same last three steps via `signInWithPassword`.
 
 ### Git history
 
+⚠️ The authentication work described in §5 is **uncommitted** in the working tree. Review it,
+then commit and push — but read the Vercel environment variable warning in §6 first, because
+pushing to `main` deploys immediately.
+
 ```
+7857ff6  Add project handover document
 2a92e42  Add Prisma singleton and Supabase Auth clients
 499a477  Add Prisma schema, first migration, and Supabase database config
 0b89c4c  Replace default homepage with FirstSeat placeholder
@@ -190,38 +251,80 @@ firstseat/
 
 ## 5. What was just completed, and the immediate next step
 
-### Just completed
+### Just completed: authentication
 
-Full infrastructure. The database schema is migrated and verified in Supabase (verified by
-introspecting the live database with `prisma db pull --print`, not by trusting command output).
-Prisma and Supabase Auth clients are written and were confirmed working against the real
-database via a temporary endpoint that returned:
+Signup, login, logout, and the `users` row on first sign-in — the first real feature in the
+product. Specifically:
 
-```json
-{"prisma":{"ok":true,"counts":{"users":0,"restaurants":0,"watches":0}},
- "supabaseAuth":{"ok":true,"signedIn":false,"userId":null}}
-```
+- **`src/proxy.ts`** refreshes the session cookie on every matched request. Its `setAll`
+  applies both the cookies *and* the second `headers` argument, which carries Supabase's
+  `no-store` directives; without those a CDN could cache one user's session cookie and hand
+  it to the next visitor.
+- **Signup and login** are Server Actions (`src/lib/auth/actions.ts`) driven by
+  `useActionState`, with every input re-validated server-side by Zod. Credentials never
+  reach a Client Component.
+- **`ensureAppUser()`** in `src/lib/auth/dal.ts` is the single place `users.id` is set to
+  `auth.users.id`. It is called from `/auth/confirm` and from `login()`.
+- **`requireAppUser()`** is the authorization gate, called by `/dashboard`.
 
-That endpoint was deleted after verification. **No application features exist yet** — the
-homepage is still a placeholder.
+One decision worth being ready to defend: the forms submit to **Server Actions** rather than
+calling `createSupabaseBrowserClient()` from the browser, which is what most tutorials do.
+Passwords are then only ever handled on the server, validation cannot be bypassed by editing
+client code, and the `users` row is created in the same trusted step as the sign-in. The
+browser client is still exported from `src/lib/supabase/client.ts` but is currently unused —
+it becomes useful for realtime subscriptions or optimistic UI later.
 
-### Immediate next step: authentication
+What was verified, rather than assumed:
 
-Build Supabase Auth signup/login, and create a `users` row on first sign-in.
+| Check | Result |
+| --- | --- |
+| `users` row created with `id` === Supabase auth id | ✅ against the live database |
+| Repeat sign-in writes nothing (`updated_at` unchanged) | ✅ idempotent |
+| Changed Supabase email propagates to `users.email` | ✅ |
+| Junk `user_metadata.timezone` falls back to `Europe/London` | ✅ never reaches the DB |
+| `/dashboard` while signed out | ✅ 307 → `/login` |
+| Every `/auth/confirm` failure mode | ✅ 307 → `/login?error=<key>` |
+| `next=//evil.example.com` on a confirmation link | ✅ clamped to `/dashboard` |
+| Wrong password vs. unknown email | ✅ Supabase returns `invalid_credentials` for both, so the UI cannot be used to discover who has an account |
+| Signup with a 3-character password | ✅ rejected server-side, email preserved in the form |
+| `npx tsc --noEmit`, `npm run lint`, `npm run build` | ✅ all clean |
 
-1. Signup and login UI (Client Components) using `createSupabaseBrowserClient()`.
-2. Add `src/middleware.ts` to refresh the auth session cookie on each request. This is required
-   by `@supabase/ssr`: Server Components cannot write cookies, so without middleware sessions
-   go stale. Its `setAll` receives a second `headers` argument that must also be applied to the
-   response, or a CDN could cache one user's session cookie and serve it to another.
-3. **On first sign-in, create the `users` row with `id` set to the Supabase Auth user ID.**
-   `users.id` has no default precisely so this link is explicit. Use an idempotent
-   `prisma.user.upsert({ where: { id: authUser.id }, ... })` so repeat sign-ins are harmless.
-4. Protect routes by calling `getCurrentUser()` (from `src/lib/supabase/server.ts`) and
-   redirecting when it returns `null`.
+The temporary endpoint used for the database checks was deleted afterwards.
 
-After auth, the natural order is: create/list Watches → seed Restaurants and ReleaseRules →
-compute DropAlerts → send Notifications.
+**Not yet verified end to end:** the real email round trip. That needs a live inbox — sign
+up with your own address, open the link, and confirm you land on `/dashboard` with one row
+in `users` whose `id` matches the row in `auth.users`.
+
+Known limitations, worth mentioning before someone finds them for you:
+
+- **A stale email can collide.** `users.email` is `@unique`, and `ensureAppUser` copies the
+  address down from Supabase on sign-in. If user A changes their Supabase address and never
+  signs in again, our row keeps the old value; if user B later takes that address, B's
+  sign-in hits a unique-constraint violation (Prisma `P2002`) and 500s. Rare, but the fix is
+  to catch `P2002` there and fall back to the existing row. Not done yet because it is
+  untested code on a path we cannot easily reproduce.
+- **No password reset or email-change flow.** Supabase supports both, and `/auth/confirm`
+  already handles the `recovery` and `email_change` link types, but there is no UI.
+- **No rate limiting of our own.** Signup and login lean on Supabase's built-in limits.
+
+### Immediate next step: watches
+
+The data model's centre of gravity, and the first thing a user actually gets value from.
+
+1. A form to create a Watch: restaurant, target date, party size, meal.
+2. List that user's watches on `/dashboard`, and let them cancel one.
+3. **Every query must be scoped by `userId` taken from `requireAppUser()`** — see the RLS
+   warning in §6. `prisma.watch.findMany({ where: { userId: user.id } })`, never just
+   `findMany()`.
+4. The `@@unique([userId, restaurantId, targetDate, partySize, meal])` constraint will
+   reject duplicates at the database level; catch Prisma's `P2002` and turn it into a
+   readable form error rather than a 500.
+
+Restaurants and ReleaseRules have no UI yet, so seed a handful by hand first — a Watch
+cannot be created without a Restaurant to point at.
+
+After watches, the order is: seed Restaurants and ReleaseRules → compute DropAlerts →
+send Notifications.
 
 ---
 
@@ -234,10 +337,23 @@ reading any row. **Every query must be scoped in server-side code**, e.g.
 most likely way to leak another user's data in this codebase. Enabling RLS anyway is still
 worth doing as defense in depth for anything reaching the tables via the Supabase API.
 
-**🔴 The four env vars are not on Vercel yet.** Nothing is broken today because no page queries
-the database, but the first deployed page that does will fail in production. Add them under
-**Vercel → Project Settings → Environment Variables** before deploying any DB-backed feature.
+**🔴 There is no `middleware.ts` in Next.js 16 — it is `proxy.ts`.** The file convention was
+renamed in v16 (`export function proxy`, not `middleware`), and the old name is deprecated.
+Every Supabase + Next.js tutorial you will find still says `middleware.ts`. The session
+refresh lives in `src/proxy.ts`; a build lists it as `ƒ Proxy (Middleware)`. There is a
+codemod (`npx @next/codemod@canary middleware-to-proxy .`) if you ever paste in old code.
+
+**🔴 The env vars are not on Vercel yet, and this is now deployment-blocking.** It used to be
+harmless because nothing touched Supabase. It no longer is: `src/proxy.ts` runs on nearly
+every request and throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are missing, so deploying
+without them takes down **the whole site**, not just the pages that use the database. Add all
+four under **Vercel → Project Settings → Environment Variables** *before* the next push.
 `DIRECT_URL` is only needed there if migrations are run from CI.
+
+**🟠 Set the Supabase redirect allow-list too.** Supabase only redirects to URLs on its own
+allow-list. Add `https://firstseat-lemon.vercel.app/**` and `http://localhost:3000/**` under
+**Supabase → Authentication → URL Configuration**, or confirmation links will bounce to the
+Site URL instead of `/auth/confirm`.
 
 **🔴 Prisma 7 requires a driver adapter.** `new PrismaClient()` with no arguments — as shown in
 every Prisma 5/6 tutorial — will fail. v7 removed the bundled Rust query engine. You must pass
@@ -245,6 +361,15 @@ every Prisma 5/6 tutorial — will fail. v7 removed the bundled Rust query engin
 
 **🔴 Use `getUser()`, never `getSession()`, for authorization.** `getSession()` reads the cookie
 and trusts it; cookies can be forged. `getUser()` verifies the JWT with Supabase's servers.
+In this codebase that call lives in exactly one place — `getAuthUser()` in
+`src/lib/auth/dal.ts`, wrapped in React `cache` so repeat asks within one render are free.
+Ask through the DAL rather than calling `supabase.auth` in a page.
+
+**🔴 Proxy is not a security boundary.** Server Functions are POST requests to the route that
+defines them, so editing the proxy `matcher` — or moving an action to another route — can
+silently remove them from proxy coverage. `src/proxy.ts` therefore only refreshes the
+session; authorization is re-checked inside every protected page and action via
+`requireAppUser()`. Keep it that way.
 
 **🟠 Prisma 7 does not auto-load `.env` files.** Env loading happens in `prisma.config.ts`, which
 explicitly loads `.env.local` via `dotenv`. If you add a new variable used by the Prisma CLI, it
@@ -274,6 +399,22 @@ inside the `@theme` block.
 the Prisma CLI (a dev dependency, never shipped to production, and it only parses config files we
 write). `npm audit fix --force` would **downgrade to Prisma 6 and break this setup**. Leave it;
 document the triage in the security doc.
+
+**🟠 Zod 4, not Zod 3.** Errors are flattened with `z.flattenError(result.error)`; the v3
+`result.error.flatten()` still exists but is deprecated. Email is the top-level `z.email()`,
+not `z.string().email()`. Custom messages use `{ error: "…" }`, not `{ message: "…" }`.
+
+**🟠 `.default()` only fires for `undefined`, but `FormData.get` returns `null`.** A missing
+field would therefore fail validation instead of taking its default. The `field()` helper in
+`src/lib/auth/actions.ts` normalises `null` to `undefined`; use it for every form read.
+
+**🟠 The React Compiler lint rule forbids `setState` inside an effect.** This rules out the
+usual "read something browser-only after mount" pattern. The signup form gets the browser
+timezone by attaching it to `FormData` at submit time instead, which also removes any
+hydration mismatch — the server never renders the value at all.
+
+**🟢 App Router folders starting with `_` are private and are not routed.** `app/api/_x/route.ts`
+returns 404 with no warning. Use a normal name for temporary verification endpoints.
 
 **🟢 Run the dev server with `npm run dev`** (http://localhost:3000).
 
@@ -320,11 +461,11 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 | 1 | Link to app on Vercel | ✅ **Done** | https://firstseat-lemon.vercel.app (placeholder only) |
 | 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders) |
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows |
-| 4 | Technical design document | 🟡 **Partly** | Schema, folder structure and decisions are captured here; still needs component structure, API design, state management, error handling, validation, UX |
+| 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, the auth flow, validation and error handling are captured here; still needs the same for watches, plus state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI |
 | 6 | Test code | ❌ **Outstanding** | No test framework installed yet. Suggested: Vitest + React Testing Library for units, Playwright for E2E |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, static prerendering, pagination plans |
-| 8 | Security document | ❌ **Outstanding** | Must cover: Supabase Auth, authorization in server code, **the RLS/Prisma caveat**, input validation, API protection, secret handling, remaining risks |
+| 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
 | 10 | 10–15 min presentation | ❌ **Outstanding** | Product, problem, users, business value, architecture, DB, flows, tests, scale, security, what you'd improve |
 
@@ -332,7 +473,8 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
-- **Working product features.** Currently zero user-facing functionality — this is the biggest gap.
+- **Working product features.** Authentication now works end to end. Watches — the thing the
+  product is actually for — are still missing, and remain the biggest gap.
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.

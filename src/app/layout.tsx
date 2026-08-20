@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "FirstSeat",
-  description: "FirstSeat — coming soon",
+  description:
+    "Get alerted the moment a hard-to-book restaurant table is released.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
