@@ -63,13 +63,13 @@ export const nycRestaurants: RestaurantSeed[] = [
     name: "Minetta Tavern",
     city: "New York",
     releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
+      platform: "RESY",
+      daysInAdvance: 30,
+      releaseTime: "00:00",
       timezone: NYC,
-      bookingUrl: TODO,
+      bookingUrl: "https://resy.com/cities/new-york-ny/venues/minetta-tavern",
     },
-    source: TODO,
+    source: "resy.com, checked 2026-08-21",
   },
   {
     name: "Carbone",
@@ -77,7 +77,7 @@ export const nycRestaurants: RestaurantSeed[] = [
     releaseRule: {
       platform: TODO,
       daysInAdvance: TODO,
-      releaseTime: TODO,
+      releaseTime: "00:00",
       timezone: NYC,
       bookingUrl: TODO,
     },
