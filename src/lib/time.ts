@@ -32,6 +32,21 @@ export type CivilDate = {
   day: number;
 };
 
+/**
+ * Reads a Postgres `time` column back as "HH:MM".
+ *
+ * Prisma carries a `time` value in a `Date` whose date part is meaningless filler; only
+ * the UTC hours and minutes hold what was stored. Reading them as *local* time would
+ * shift the value by the server's own offset, which is a bug that only shows up when the
+ * server is not in UTC.
+ */
+export function timeOfDayFromDate(value: Date): string {
+  const hours = String(value.getUTCHours()).padStart(2, "0");
+  const minutes = String(value.getUTCMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+}
+
 /** Parses "HH:MM" into numbers, or returns `null` if it is not a valid time of day. */
 export function parseTimeOfDay(value: string): TimeOfDay | null {
   const match = TIME_OF_DAY_PATTERN.exec(value);

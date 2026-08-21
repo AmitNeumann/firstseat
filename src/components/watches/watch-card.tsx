@@ -1,5 +1,8 @@
+import Link from "next/link";
+
+import { DropTimes } from "@/components/watches/drop-times";
 import { DropAlertStatus } from "@/generated/prisma/enums";
-import { MEAL_LABELS, PLATFORM_LABELS, formatDate, formatInstant } from "@/lib/watches/format";
+import { MEAL_LABELS, PLATFORM_LABELS, formatDate } from "@/lib/watches/format";
 import { cancelWatch } from "@/lib/watches/actions";
 import type { UserWatch } from "@/lib/watches/queries";
 
@@ -22,42 +25,56 @@ export function WatchCard({ watch, timezone }: { watch: UserWatch; timezone: str
           </p>
         </div>
 
-        <form action={cancelWatch}>
-          <input type="hidden" name="watchId" value={watch.id} />
-          <button
-            type="submit"
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/watches/${watch.id}/edit`}
             className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium
-                       transition-colors hover:border-danger hover:text-danger"
+                       transition-colors hover:border-accent hover:text-accent"
           >
-            Cancel
-          </button>
-        </form>
+            Edit
+          </Link>
+
+          <form action={cancelWatch}>
+            <input type="hidden" name="watchId" value={watch.id} />
+            <button
+              type="submit"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium
+                         transition-colors hover:border-danger hover:text-danger"
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
       </header>
 
-      <ul className="space-y-2 border-t border-border pt-4">
+      <ul className="space-y-3 border-t border-border pt-4">
         {watch.dropAlerts.map((alert) => (
-          <li key={alert.id} className="flex flex-wrap items-baseline justify-between gap-2">
-            <span className="text-sm">
-              Opens on {PLATFORM_LABELS[alert.platform]}
-              <span className="block text-xs text-muted sm:inline sm:before:content-['_·_']">
-                {formatInstant(alert.dropDatetime, timezone)}
-              </span>
-            </span>
+          <li key={alert.id} className="space-y-1">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-medium">
+                Opens on {PLATFORM_LABELS[alert.platform]}
+              </p>
 
-            {alert.status === DropAlertStatus.SCHEDULED ? (
-              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
-                Alert at {formatInstant(alert.alertAt, timezone)}
-              </span>
-            ) : (
-              <a
-                href={alert.bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium underline underline-offset-2"
-              >
-                Already open — book now
-              </a>
-            )}
+              {alert.status !== DropAlertStatus.SCHEDULED && (
+                <a
+                  href={alert.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium underline underline-offset-2"
+                >
+                  Already open — book now
+                </a>
+              )}
+            </div>
+
+            <DropTimes
+              dropDatetime={alert.dropDatetime}
+              alertAt={
+                alert.status === DropAlertStatus.SCHEDULED ? alert.alertAt : undefined
+              }
+              restaurantZone={alert.releaseRule.timezone}
+              userZone={timezone}
+            />
           </li>
         ))}
       </ul>

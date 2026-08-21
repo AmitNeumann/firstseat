@@ -48,6 +48,20 @@ export const CreateWatchSchema = z.object({
 
 export type CreateWatchInput = z.infer<typeof CreateWatchSchema>;
 
+/**
+ * Editing a watch changes the date, party size or meal. The restaurant is not editable:
+ * pointing an existing watch at a different restaurant makes it a different watch, and
+ * keeping it fixed means the alerts always belong to rules the watch already used.
+ *
+ * Built from the create schema rather than repeated, so a rule tightened in one place
+ * cannot quietly stay loose in the other.
+ */
+export const UpdateWatchSchema = CreateWatchSchema.omit({ restaurantId: true }).extend({
+  watchId: z.uuid(),
+});
+
+export type UpdateWatchInput = z.infer<typeof UpdateWatchSchema>;
+
 export const CancelWatchSchema = z.object({
   watchId: z.uuid(),
 });
@@ -60,6 +74,8 @@ export type WatchFormState =
         targetDate?: string[];
         partySize?: string[];
         meal?: string[];
+        /** Only reachable by a hand-made request; the edit form fills this in itself. */
+        watchId?: string[];
       };
       /** A whole-form failure, e.g. a duplicate watch or a window that already opened. */
       message?: string;

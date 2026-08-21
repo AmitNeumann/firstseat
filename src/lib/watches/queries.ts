@@ -1,7 +1,9 @@
 import "server-only";
 
-import { WatchStatus } from "@/generated/prisma/enums";
+import { DropAlertStatus, WatchStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { timeOfDayFromDate } from "@/lib/time";
+import type { RestaurantOption } from "@/lib/watches/options";
 
 /**
  * Reads for the watch feature.
@@ -32,14 +34,37 @@ export async function listBookableRestaurants() {
       name: true,
       city: true,
       releaseRules: {
+        orderBy: { platform: "asc" },
         select: {
           platform: true,
           daysInAdvance: true,
+          releaseTime: true,
           timezone: true,
         },
       },
     },
   });
+}
+
+/**
+ * The restaurant list shaped for the form, with `time` columns turned into plain "HH:MM"
+ * strings. Doing the conversion here keeps `Date` objects whose date part is meaningless
+ * from being sent to the browser, where they invite exactly the wrong reading.
+ */
+export async function listRestaurantOptions(): Promise<RestaurantOption[]> {
+  const restaurants = await listBookableRestaurants();
+
+  return restaurants.map((restaurant) => ({
+    id: restaurant.id,
+    name: restaurant.name,
+    city: restaurant.city,
+    rules: restaurant.releaseRules.map((rule) => ({
+      platform: rule.platform,
+      daysInAdvance: rule.daysInAdvance,
+      releaseTime: timeOfDayFromDate(rule.releaseTime),
+      timezone: rule.timezone,
+    })),
+  }));
 }
 
 export type BookableRestaurant = Awaited<
@@ -64,6 +89,10 @@ export async function listWatchesForUser(userId: string) {
         select: { name: true, city: true },
       },
       dropAlerts: {
+        // Editing a watch's date cancels its alerts and schedules new ones. The cancelled
+        // rows are kept as a record of what was scheduled, but they are not what the user
+        // is waiting for, so they stay out of the card.
+        where: { status: { not: DropAlertStatus.CANCELLED } },
         orderBy: { dropDatetime: "asc" },
         select: {
           id: true,
@@ -72,6 +101,9 @@ export async function listWatchesForUser(userId: string) {
           alertAt: true,
           bookingUrl: true,
           status: true,
+          // The zone the release time is quoted in, so a drop can be shown on the
+          // restaurant's clock as well as the user's.
+          releaseRule: { select: { timezone: true } },
         },
       },
     },
@@ -79,3 +111,64 @@ export async function listWatchesForUser(userId: string) {
 }
 
 export type UserWatch = Awaited<ReturnType<typeof listWatchesForUser>>[number];
+
+/**
+ * One watch belonging to one user, shaped for the edit form.
+ *
+ * `findFirst` with `userId` in the where clause rather than `findUnique` by id: another
+ * account's watch comes back as `null`, exactly like an id that was never real. The page
+ * turns both into a 404, so this cannot be used to find out which ids exist.
+ */
+export async function getWatchForUser(userId: string, watchId: string) {
+  const watch = await prisma.watch.findFirst({
+    where: { id: watchId, userId, status: WatchStatus.ACTIVE },
+    select: {
+      id: true,
+      targetDate: true,
+      partySize: true,
+      meal: true,
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          releaseRules: {
+            orderBy: { platform: "asc" },
+            select: {
+              platform: true,
+              daysInAdvance: true,
+              releaseTime: true,
+              timezone: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!watch) {
+    return null;
+  }
+
+  return {
+    id: watch.id,
+    // A `date` column has no zone; its ISO date part is the value, and it is what the
+    // date input expects.
+    targetDate: watch.targetDate.toISOString().slice(0, 10),
+    partySize: watch.partySize,
+    meal: watch.meal,
+    restaurant: {
+      id: watch.restaurant.id,
+      name: watch.restaurant.name,
+      city: watch.restaurant.city,
+      rules: watch.restaurant.releaseRules.map((rule) => ({
+        platform: rule.platform,
+        daysInAdvance: rule.daysInAdvance,
+        releaseTime: timeOfDayFromDate(rule.releaseTime),
+        timezone: rule.timezone,
+      })),
+    } satisfies RestaurantOption,
+  };
+}
+
+export type EditableWatch = NonNullable<Awaited<ReturnType<typeof getWatchForUser>>>;

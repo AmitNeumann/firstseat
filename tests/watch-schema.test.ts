@@ -8,7 +8,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { CancelWatchSchema, CreateWatchSchema, MAX_PARTY_SIZE } from "@/lib/watches/schemas";
+import {
+  CancelWatchSchema,
+  CreateWatchSchema,
+  MAX_PARTY_SIZE,
+  UpdateWatchSchema,
+} from "@/lib/watches/schemas";
 
 const RESTAURANT_ID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 
@@ -109,6 +114,48 @@ describe("CreateWatchSchema", () => {
       "restaurantId",
       "targetDate",
     ]);
+  });
+});
+
+describe("UpdateWatchSchema", () => {
+  const WATCH_ID = "8c9d1f22-6a4b-4d1e-9f30-2b7c5d8e4a11";
+
+  function edit(overrides: Record<string, unknown> = {}) {
+    return {
+      watchId: WATCH_ID,
+      targetDate: "2026-09-24",
+      partySize: "4",
+      meal: "LUNCH",
+      ...overrides,
+    };
+  }
+
+  it("accepts a well-formed edit", () => {
+    expect(UpdateWatchSchema.safeParse(edit()).success).toBe(true);
+  });
+
+  it("requires a watch id", () => {
+    expect(UpdateWatchSchema.safeParse(edit({ watchId: "nope" })).success).toBe(false);
+  });
+
+  it("cannot be used to move a watch to another restaurant", () => {
+    // The restaurant is deliberately not editable. A request carrying restaurantId is
+    // accepted, but the field is stripped rather than applied.
+    const parsed = UpdateWatchSchema.safeParse(
+      edit({ restaurantId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301" }),
+    );
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && "restaurantId" in parsed.data).toBe(false);
+  });
+
+  it("applies the same field rules as creating", () => {
+    // Built from the create schema, so a rule tightened there cannot stay loose here.
+    expect(UpdateWatchSchema.safeParse(edit({ targetDate: "2026-02-31" })).success).toBe(
+      false,
+    );
+    expect(UpdateWatchSchema.safeParse(edit({ partySize: "0" })).success).toBe(false);
+    expect(UpdateWatchSchema.safeParse(edit({ meal: "SUPPER" })).success).toBe(false);
   });
 });
 

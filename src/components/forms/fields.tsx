@@ -114,6 +114,7 @@ export function DateField({
   defaultValue,
   hint,
   errors,
+  onChange,
 }: {
   label: string;
   name: string;
@@ -123,11 +124,22 @@ export function DateField({
   defaultValue?: string;
   hint?: string;
   errors?: string[];
+  /** Notified as the date changes, so a caller can preview something from it. */
+  onChange?: (value: string) => void;
 }) {
   return (
     <FieldShell label={label} name={name} hint={hint} errors={errors}>
       {(props) => (
-        <input {...props} name={name} type="date" min={min} max={max} defaultValue={defaultValue} required />
+        <input
+          {...props}
+          name={name}
+          type="date"
+          min={min}
+          max={max}
+          defaultValue={defaultValue}
+          onChange={onChange && ((event) => onChange(event.target.value))}
+          required
+        />
       )}
     </FieldShell>
   );
