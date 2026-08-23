@@ -1,5 +1,5 @@
 import { DropTimes } from "@/components/watches/drop-times";
-import { PLATFORM_LABELS } from "@/lib/watches/format";
+import { platformLabel } from "@/lib/watches/format";
 import type { RestaurantOption } from "@/lib/watches/options";
 import { computeDropMoment } from "@/lib/watches/drop-time";
 
@@ -48,7 +48,7 @@ export function DropPreview({
       {moments.map(({ rule, moment }) => (
         <div key={rule.platform} className="space-y-1">
           <p className="text-xs text-muted">
-            Bookings open on {PLATFORM_LABELS[rule.platform]}
+            Bookings open on {platformLabel(rule.platform)}
           </p>
           <DropTimes
             dropDatetime={moment.dropDatetime}

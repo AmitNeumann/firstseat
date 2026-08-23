@@ -9,28 +9,16 @@
 
 import * as z from "zod";
 
-import { Platform } from "../../src/generated/prisma/enums";
 import { TIME_OF_DAY_PATTERN, isRegionTimezone } from "../../src/lib/time";
+import {
+  MAX_PLATFORM_LENGTH,
+  hostMatches,
+  isPlatformSlug,
+  platformHostname,
+  platformLabel,
+  toPlatformSlug,
+} from "../../src/lib/watches/platforms";
 import { TODO, type RestaurantSeed } from "./types";
-
-/**
- * The hostname each platform's booking links live on. Used to cross-check the pasted URL
- * against the chosen platform, which catches the easy mistake of picking `RESY` from the
- * list and then pasting a Tock link.
- *
- * `DIRECT` and `OTHER` are intentionally absent: they mean "the restaurant's own site",
- * which can be any hostname.
- */
-const PLATFORM_HOSTNAMES: Partial<Record<Platform, string>> = {
-  [Platform.RESY]: "resy.com",
-  [Platform.TOCK]: "exploretock.com",
-  [Platform.OPENTABLE]: "opentable.com",
-  [Platform.SEVENROOMS]: "sevenrooms.com",
-};
-
-function hostMatches(hostname: string, expected: string): boolean {
-  return hostname === expected || hostname.endsWith(`.${expected}`);
-}
 
 /** Rejects a value that is still the placeholder, whatever its position in the object. */
 const notPlaceholder = z.string().refine((value) => value.trim() !== TODO, {
@@ -55,9 +43,25 @@ const bookingUrlField = notPlaceholder.pipe(
     ),
 );
 
+/**
+ * Any booking platform is allowed, but only in one canonical form.
+ *
+ * `transform` runs before the check, so "SevenRooms", "sevenrooms" and "Seven Rooms" all
+ * become "sevenrooms" rather than being rejected or, worse, stored as three different
+ * platforms — which would defeat the one-rule-per-platform constraint in the database.
+ */
+const platformField = notPlaceholder.pipe(
+  z
+    .string()
+    .transform(toPlatformSlug)
+    .refine(isPlatformSlug, {
+      error: `Use letters and numbers, e.g. "Resy" or "Table Check" (max ${MAX_PLATFORM_LENGTH} characters). Punctuation other than a hyphen is not allowed.`,
+    }),
+);
+
 const releaseRuleSchema = z
   .object({
-    platform: z.enum(Platform),
+    platform: platformField,
 
     daysInAdvance: z
       .number()
@@ -80,8 +84,14 @@ const releaseRuleSchema = z
 
     bookingUrl: bookingUrlField,
   })
+  // Cross-checks the pasted URL against the platform, which catches the easy mistake of
+  // writing "Resy" and then pasting a Tock link.
+  //
+  // Only platforms we have hardcoded a host for are checked. A platform we have never seen
+  // is accepted as-is: we have nothing to compare it against, and refusing it would make
+  // adding a restaurant on a new platform impossible.
   .superRefine((rule, ctx) => {
-    const expected = PLATFORM_HOSTNAMES[rule.platform];
+    const expected = platformHostname(rule.platform);
 
     if (!expected) {
       return;
@@ -99,7 +109,7 @@ const releaseRuleSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["bookingUrl"],
-        message: `Platform is ${rule.platform}, so the link should be on ${expected}, but this one is on ${hostname}.`,
+        message: `Platform is ${platformLabel(rule.platform)}, so the link should be on ${expected}, but this one is on ${hostname}.`,
       });
     }
   });

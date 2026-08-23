@@ -147,9 +147,11 @@ User ──< Watch >── Restaurant ──< ReleaseRule
 Unique on `(name, city)`; indexed on `city`.
 
 **`release_rules`** (10 columns) — when a restaurant releases tables.
-`id`, `restaurantId` (FK → restaurants, cascade), `platform` (enum), `daysInAdvance` (int),
-`releaseTime` (`time`), `timezone` (string), `bookingUrl`, `verified` (bool), timestamps.
-Example row: *Resy, 30 days ahead, 09:00, Europe/London*.
+`id`, `restaurantId` (FK → restaurants, cascade), `platform` (`varchar(40)`, slug),
+`daysInAdvance` (int), `releaseTime` (`time`), `timezone` (string), `bookingUrl`,
+`verified` (bool), timestamps.
+Unique on `(restaurantId, platform)` — at most one rule per platform per restaurant.
+Example row: *resy, 30 days ahead, 09:00, Europe/London*.
 
 **`watches`** (9 columns) — a user asking to be told when a table opens.
 `id`, `userId` (FK → users, cascade), `restaurantId` (FK → restaurants, cascade),
@@ -172,12 +174,19 @@ query, "which alerts are due now?".
 
 | Enum | Values |
 | --- | --- |
-| `Platform` | `OPENTABLE`, `RESY`, `TOCK`, `SEVENROOMS`, `DIRECT`, `OTHER` |
 | `Meal` | `BREAKFAST`, `BRUNCH`, `LUNCH`, `DINNER` |
 | `WatchStatus` | `ACTIVE`, `PAUSED`, `FULFILLED`, `EXPIRED`, `CANCELLED` |
 | `DropAlertStatus` | `SCHEDULED`, `SENT`, `MISSED`, `CANCELLED` |
 | `NotificationChannel` | `EMAIL`, `PUSH`, `SMS` |
 | `NotificationStatus` | `PENDING`, `SENT`, `FAILED` |
+
+`platform` is deliberately **not** an enum. The set of booking platforms is open-ended
+editorial data that no code branches on, so an enum charged a schema migration for what is
+really a data edit. It is a `varchar(40)` holding a lowercase slug (`resy`, `sevenrooms`,
+`table-check`), guarded by a `CHECK` constraint of the same shape on both `release_rules`
+and `drop_alerts`. Labels and the booking-URL cross-check live in
+`src/lib/watches/platforms.ts`. Prisma cannot express `CHECK` constraints, so it exists only
+in the migration SQL — keep it in step with `PLATFORM_SLUG_PATTERN`.
 
 ### Design decisions worth being able to defend
 

@@ -7,7 +7,7 @@
  * Aviv and the restaurant in New York.
  */
 
-import { Meal, Platform } from "@/generated/prisma/enums";
+import { Meal } from "@/generated/prisma/enums";
 import { parseCivilDate } from "@/lib/time";
 
 export const MEAL_LABELS: Record<Meal, string> = {
@@ -17,14 +17,9 @@ export const MEAL_LABELS: Record<Meal, string> = {
   [Meal.DINNER]: "Dinner",
 };
 
-export const PLATFORM_LABELS: Record<Platform, string> = {
-  [Platform.RESY]: "Resy",
-  [Platform.TOCK]: "Tock",
-  [Platform.OPENTABLE]: "OpenTable",
-  [Platform.SEVENROOMS]: "SevenRooms",
-  [Platform.DIRECT]: "the restaurant's own site",
-  [Platform.OTHER]: "another platform",
-};
+// Platform labels are not a fixed map: any platform can be recorded, so the label is
+// looked up in `@/lib/watches/platforms` and humanised when we do not recognise it.
+export { platformLabel } from "@/lib/watches/platforms";
 
 /** e.g. "Thu 24 Sep 2026, 07:00" — a moment, read on the clock in `timeZone`. */
 export function formatInstant(instant: Date, timeZone: string): string {

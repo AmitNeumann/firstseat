@@ -49,12 +49,15 @@ describe("computeDropMoment", () => {
     expect(moment.dropDatetime.getTime() - moment.alertAt.getTime()).toBe(90 * 60_000);
   });
 
-  it("defaults to a five-minute warning", () => {
+  it("warns five minutes ahead by default", () => {
+    // Pinned deliberately. Five minutes is a product decision — long enough to get to the
+    // screen and be ready, short enough that you are still there when the window opens —
+    // so changing it should break a test rather than pass unnoticed.
+    expect(DEFAULT_ALERT_LEAD_MINUTES).toBe(5);
+
     const moment = computeDropMoment({ targetDate: "2026-09-24", rule: NY_MIDNIGHT_30 });
 
-    expect(moment.dropDatetime.getTime() - moment.alertAt.getTime()).toBe(
-      DEFAULT_ALERT_LEAD_MINUTES * 60_000,
-    );
+    expect(moment.dropDatetime.getTime() - moment.alertAt.getTime()).toBe(5 * 60_000);
   });
 
   describe("daylight saving", () => {

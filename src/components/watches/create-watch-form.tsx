@@ -7,6 +7,7 @@ import { DropPreview } from "@/components/watches/drop-preview";
 import { RestaurantPicker } from "@/components/watches/restaurant-picker";
 import { WatchFieldset } from "@/components/watches/watch-fieldset";
 import { createWatch } from "@/lib/watches/actions";
+import { DEFAULT_ALERT_LEAD_MINUTES } from "@/lib/watches/drop-time";
 import type { RestaurantOption } from "@/lib/watches/options";
 
 export function CreateWatchForm({
@@ -74,7 +75,7 @@ export function CreateWatchForm({
 
       <p className="text-xs text-muted">
         Restaurants release tables on their own local clock. We convert that to your
-        timezone ({timezone}) and alert you a few minutes before.
+        timezone ({timezone}) and alert you {DEFAULT_ALERT_LEAD_MINUTES} minutes before.
       </p>
     </form>
   );

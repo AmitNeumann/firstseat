@@ -7,11 +7,11 @@
  * typing into it.
  */
 
-import type { Platform } from "@/generated/prisma/enums";
-import { PLATFORM_LABELS } from "@/lib/watches/format";
+import { platformLabel } from "@/lib/watches/platforms";
 
 export type RestaurantRuleOption = {
-  platform: Platform;
+  /** A validated lowercase slug, e.g. "resy" or "sevenrooms". */
+  platform: string;
   daysInAdvance: number;
   /** Wall-clock "HH:MM" in `timezone`. */
   releaseTime: string;
@@ -82,6 +82,6 @@ export function restaurantLabel(restaurant: RestaurantOption): string {
  */
 export function summariseRules(rules: RestaurantRuleOption[]): string {
   return rules
-    .map((rule) => `${PLATFORM_LABELS[rule.platform]} · ${rule.daysInAdvance} days ahead`)
+    .map((rule) => `${platformLabel(rule.platform)} · ${rule.daysInAdvance} days ahead`)
     .join(" / ");
 }

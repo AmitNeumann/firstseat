@@ -7,7 +7,6 @@
 
 import { describe, expect, it } from "vitest";
 
-import { Platform } from "@/generated/prisma/enums";
 import {
   filterRestaurants,
   matchesQuery,
@@ -22,7 +21,7 @@ function restaurant(name: string, city = "New York"): RestaurantOption {
     city,
     rules: [
       {
-        platform: Platform.RESY,
+        platform: "resy",
         daysInAdvance: 30,
         releaseTime: "00:00",
         timezone: "America/New_York",

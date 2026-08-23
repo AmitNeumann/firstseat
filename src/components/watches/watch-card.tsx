@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { DropTimes } from "@/components/watches/drop-times";
 import { DropAlertStatus } from "@/generated/prisma/enums";
-import { MEAL_LABELS, PLATFORM_LABELS, formatDate } from "@/lib/watches/format";
+import { MEAL_LABELS, formatDate, platformLabel } from "@/lib/watches/format";
 import { cancelWatch } from "@/lib/watches/actions";
 import type { UserWatch } from "@/lib/watches/queries";
 
@@ -52,7 +52,7 @@ export function WatchCard({ watch, timezone }: { watch: UserWatch; timezone: str
           <li key={alert.id} className="space-y-1">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-medium">
-                Opens on {PLATFORM_LABELS[alert.platform]}
+                Opens on {platformLabel(alert.platform)}
               </p>
 
               {alert.status !== DropAlertStatus.SCHEDULED && (

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as z from "zod";
 
-import { DropAlertStatus, WatchStatus, type Platform } from "@/generated/prisma/enums";
+import { DropAlertStatus, WatchStatus } from "@/generated/prisma/enums";
 import { requireAppUser } from "@/lib/auth/dal";
 import { field } from "@/lib/form-data";
 import { prisma } from "@/lib/prisma";
@@ -46,7 +46,7 @@ function toDateColumn(targetDate: string): Date {
 /** The columns of a release rule that scheduling needs. */
 type ReleaseRuleRow = {
   id: string;
-  platform: Platform;
+  platform: string;
   daysInAdvance: number;
   releaseTime: Date;
   timezone: string;
@@ -56,7 +56,7 @@ type ReleaseRuleRow = {
 /** A row to write into `drop_alerts`, minus the `watchId` the caller supplies. */
 type PlannedAlert = {
   releaseRuleId: string;
-  platform: Platform;
+  platform: string;
   dropDatetime: Date;
   alertAt: Date;
   bookingUrl: string;

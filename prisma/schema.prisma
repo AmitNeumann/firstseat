@@ -10,15 +10,11 @@ datasource db {
   provider = "postgresql"
 }
 
-// Reservation platform a restaurant releases tables on.
-enum Platform {
-  OPENTABLE
-  RESY
-  TOCK
-  SEVENROOMS
-  DIRECT
-  OTHER
-}
+// `platform` was a Postgres enum and is now a validated lowercase slug. The set of
+// booking platforms is open-ended editorial data that no code branches on, so an enum
+// cost a migration per new platform and bought nothing. A CHECK constraint on both
+// `platform` columns keeps the database enforcing the slug shape — Prisma cannot express
+// CHECK constraints, so it lives only in the migration SQL. See src/lib/watches/platforms.ts.
 
 enum Meal {
   BREAKFAST
@@ -87,7 +83,7 @@ model Restaurant {
 model ReleaseRule {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   restaurantId  String   @map("restaurant_id") @db.Uuid
-  platform      Platform
+  platform      String   @db.VarChar(40)
   daysInAdvance Int      @map("days_in_advance")
   releaseTime   DateTime @map("release_time") @db.Time(0)
   timezone      String
@@ -134,7 +130,7 @@ model DropAlert {
   id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   watchId       String          @map("watch_id") @db.Uuid
   releaseRuleId String          @map("release_rule_id") @db.Uuid
-  platform      Platform
+  platform      String          @db.VarChar(40)
   dropDatetime  DateTime        @map("drop_datetime") @db.Timestamptz(6)
   alertAt       DateTime        @map("alert_at") @db.Timestamptz(6)
   bookingUrl    String          @map("booking_url")

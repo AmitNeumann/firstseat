@@ -8,7 +8,7 @@
  *   rule          = { daysInAdvance, releaseTime, timezone }
  *   dropDate      = targetDate − daysInAdvance          (plain calendar arithmetic)
  *   dropDatetime  = dropDate at releaseTime, in the restaurant's timezone
- *   alertAt       = dropDatetime − a few minutes
+ *   alertAt       = dropDatetime − DEFAULT_ALERT_LEAD_MINUTES
  *
  * Every function here is pure: same inputs, same outputs, no database, no clock, no
  * network. That is deliberate — this is the code most worth testing, and code that reads
@@ -36,7 +36,14 @@ import {
   type TimeOfDay,
 } from "@/lib/time";
 
-/** How long before the drop the user is warned. Enough time to open the link and be ready. */
+/**
+ * How long before the drop the user is warned.
+ *
+ * Five minutes is a deliberate business rule, not an arbitrary constant: long enough to
+ * stop what you are doing, open the link and have the party size and date already
+ * selected, short enough that you are still at the screen when the window opens. It is
+ * pinned by a test so changing it has to be a deliberate act.
+ */
 export const DEFAULT_ALERT_LEAD_MINUTES = 5;
 
 /** The parts of a release rule that affect the calculation. */

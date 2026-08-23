@@ -1,3 +1,4 @@
+import { DEFAULT_ALERT_LEAD_MINUTES } from "@/lib/watches/drop-time";
 import { describeInBothZones, formatTime, zonePlaceLabel } from "@/lib/watches/format";
 
 /**
@@ -35,7 +36,8 @@ export function DropTimes({
 
       {alertAt && (
         <p className="text-muted">
-          We alert you at {formatTime(alertAt, userZone)}{" "}
+          We alert you {DEFAULT_ALERT_LEAD_MINUTES} minutes before, at{" "}
+          {formatTime(alertAt, userZone)}{" "}
           {when.sameZone ? `${zonePlaceLabel(userZone)} time` : "your time"}.
         </p>
       )}

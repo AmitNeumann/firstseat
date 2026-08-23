@@ -8,8 +8,6 @@
  * value is written as `TODO`, the seed runner refuses to insert it, and it is reported.
  */
 
-import type { Platform } from "../../src/generated/prisma/enums";
-
 export const TODO = "TODO" as const;
 export type Todo = typeof TODO;
 
@@ -18,11 +16,14 @@ export type Researched<T> = T | Todo;
 
 export type ReleaseRuleSeed = {
   /**
-   * Which platform the restaurant releases tables on. Read it off the booking URL:
-   * resy.com -> RESY, exploretock.com -> TOCK, opentable.com -> OPENTABLE,
-   * sevenrooms.com -> SEVENROOMS, the restaurant's own site -> DIRECT.
+   * Which platform the restaurant releases tables on — any platform, written however
+   * reads naturally: "Resy", "SevenRooms", "DoorDash", "Table Check". It is normalised to
+   * a lowercase slug ("sevenrooms", "table-check") before being stored, so capitalisation
+   * does not matter and the same platform cannot end up recorded three ways.
+   *
+   * Use "Direct" for the restaurant's own site, or "Other" if nothing else fits.
    */
-  platform: Researched<Platform>;
+  platform: Researched<string>;
 
   /**
    * How many days before the meal the booking window opens. On Resy this is usually
