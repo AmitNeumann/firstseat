@@ -10,10 +10,15 @@
  *
  * ── How to fill in one restaurant ──────────────────────────────────────────
  *
- *  1. Open the restaurant's booking page (Resy, Tock, OpenTable, SevenRooms, or the
- *     restaurant's own site).
+ *  1. Open the restaurant's booking page — whichever platform it uses.
  *  2. `bookingUrl`   — copy the URL of that page. Must start with https://
- *  3. `platform`     — whichever platform that URL belongs to.
+ *  3. `platform`     — whichever platform that URL belongs to. Any platform is allowed,
+ *                      written however reads naturally: "Resy", "SevenRooms",
+ *                      "DoorDash", "OpenTable", "Tock", "Yelp", "Table Check". Use
+ *                      "Direct" for the restaurant's own site, or "Other" if nothing
+ *                      fits. Capitalisation and spaces do not matter — it is normalised
+ *                      to a lowercase slug, so "SevenRooms" and "Seven Rooms" both become
+ *                      "sevenrooms" and cannot end up recorded as two platforms.
  *  4. `daysInAdvance`— how far ahead the calendar lets you book. Resy usually states it
  *                      ("Reservations open 30 days in advance"). If it does not, find the
  *                      last date the calendar will accept and count the days from today.
@@ -30,7 +35,7 @@
  *     name: "The Example Room",
  *     city: "New York",
  *     releaseRule: {
- *       platform: "RESY",
+ *       platform: "Resy",
  *       daysInAdvance: 30,
  *       releaseTime: "00:00",
  *       timezone: "America/New_York",
@@ -49,11 +54,17 @@
  *  • The schema allows a restaurant to have several release rules (one per platform).
  *    One each is enough for now, and the database enforces at most one rule per platform
  *    per restaurant.
+ *  • For the platforms we recognise, the booking link is cross-checked against the host it
+ *    should be on, so labelling a Tock link "Resy" is caught. A platform we have not seen
+ *    before is accepted without that check — there is nothing to check it against.
  *  • Re-running the seed updates existing rows in place rather than duplicating them, so
  *    you can add restaurants a few at a time.
  */
 
-import { TODO, type RestaurantSeed } from "./types";
+// Every entry below is filled in, so the `TODO` sentinel is not currently imported.
+// Adding a restaurant you have not finished researching means importing it again:
+//   import { TODO, type RestaurantSeed } from "./types";
+import type { RestaurantSeed } from "./types";
 
 /** Every restaurant in this list is in New York City, which is US Eastern time. */
 const NYC = "America/New_York";
@@ -63,7 +74,7 @@ export const nycRestaurants: RestaurantSeed[] = [
     name: "Minetta Tavern",
     city: "New York",
     releaseRule: {
-      platform: "RESY",
+      platform: "Resy",
       daysInAdvance: 30,
       releaseTime: "00:00",
       timezone: NYC,
@@ -72,87 +83,87 @@ export const nycRestaurants: RestaurantSeed[] = [
     source: "resy.com, checked 2026-08-21",
   },
   {
-    name: "Carbone",
+    name: "Or'esh",
     city: "New York",
     releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: "00:00",
+      platform: "DoorDash",
+      daysInAdvance: 7,
+      releaseTime: "10:00",
       timezone: NYC,
-      bookingUrl: TODO,
+      bookingUrl: "https://doordash.com/reservations/r/450wbroadway",
     },
-    source: TODO,
+    source: "doordash.com + oresh.com, checked 2026-08-22",
   },
   {
-    name: "4 Charles Prime Rib",
+    name: "L'Artusi",
     city: "New York",
     releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
+      platform: "Resy",
+      daysInAdvance: 14,
+      releaseTime: "00:00",
       timezone: NYC,
-      bookingUrl: TODO,
+      bookingUrl: "https://resy.com/cities/new-york-ny/venues/lartusi-ny",
     },
-    source: TODO,
+    source: "resy.com, checked 2026-08-22",
+  },
+  {
+    name: "The Four Horsemen",
+    city: "New York",
+    releaseRule: {
+      platform: "Resy",
+      daysInAdvance: 30,
+      releaseTime: "07:00",
+      timezone: NYC,
+      bookingUrl: "https://resy.com/cities/new-york-ny/venues/the-four-horsemen",
+    },
+    source: "fourhorsemenbk.com/reservations + resy.com, checked 2026-08-23",
+  },
+  {
+    name: "Via Carota",
+    city: "New York",
+    releaseRule: {
+      platform: "Resy",
+      daysInAdvance: 30,
+      releaseTime: "10:00",
+      timezone: NYC,
+      bookingUrl: "https://resy.com/cities/new-york-ny/venues/via-carota",
+    },
+    source: "resy.com, checked 2026-08-23",
+  },
+  {
+    name: "Soothr",
+    city: "New York",
+    releaseRule: {
+      platform: "OpenTable",
+      daysInAdvance: 30,
+      releaseTime: "00:00",
+      timezone: NYC,
+      bookingUrl: "https://www.opentable.com/r/soothr-new-york",
+    },
+    source: "opentable.com, checked 2026-08-23",
   },
   {
     name: "Don Angie",
     city: "New York",
     releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
+      platform: "OpenTable",
+      daysInAdvance: 7,
+      releaseTime: "09:00",
       timezone: NYC,
-      bookingUrl: TODO,
+      bookingUrl: "https://www.opentable.com/booking/restref/availability?correlationId=dec39ed9-8fba-484b-97ca-92a35bb61947&restRef=994474",
     },
-    source: TODO,
+    source: "donangie.com, checked 2026-08-23",
   },
   {
-    name: "Lilia",
+    name: "Torrisi",
     city: "New York",
     releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
+      platform: "Resy",
+      daysInAdvance: 30,
+      releaseTime: "10:00",
       timezone: NYC,
-      bookingUrl: TODO,
+      bookingUrl: "https://resy.com/cities/new-york-ny/venues/torrisi",
     },
-    source: TODO,
-  },
-  {
-    name: "Rezdôra",
-    city: "New York",
-    releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
-      timezone: NYC,
-      bookingUrl: TODO,
-    },
-    source: TODO,
-  },
-  {
-    name: "Tatiana by Kwame Onwuachi",
-    city: "New York",
-    releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
-      timezone: NYC,
-      bookingUrl: TODO,
-    },
-    source: TODO,
-  },
-  {
-    name: "Semma",
-    city: "New York",
-    releaseRule: {
-      platform: TODO,
-      daysInAdvance: TODO,
-      releaseTime: TODO,
-      timezone: NYC,
-      bookingUrl: TODO,
-    },
-    source: TODO,
+    source: "resy.com & torrisinyc.com, checked 2026-08-23",
   },
 ];
