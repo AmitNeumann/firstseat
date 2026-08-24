@@ -3,7 +3,7 @@
 This document is the single source of truth for continuing work on FirstSeat. It assumes
 zero prior context. Read it top to bottom before making changes.
 
-**Last updated:** 23 August 2026
+**Last updated:** 24 August 2026
 **Course deadline:** 6 September 2026
 **Course brief:** `~/Desktop/fullstack project.docx` (RUNI CS 2026, "Become a Full-Stack Engineer")
 
@@ -13,11 +13,12 @@ zero prior context. Read it top to bottom before making changes.
 
 | | |
 | --- | --- |
-| **Current branch** | `feat/watches` at `e4a89b5` — **2 commits ahead of `origin/feat/watches`**, not merged to `main` |
+| **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Design foundation + landing landed as `883bc45`. Check `git log -5 --oneline` rather than trusting a later hash here. |
 | **Working tree** | clean at the time of writing; check `git status -sb` |
-| **What works locally** | landing page, signup, login, logout, email confirmation, protected `/dashboard`; create / edit / cancel a watch; timezone-aware drop-time calculation; 8 real seeded restaurants |
-| **What does not exist yet** | any considered visual design (**this is the next task**), the AI parse endpoint, the scheduler that actually sends notifications, most course documents (§8) |
-| **Tests** | Vitest, 5 files, **136 tests passing**. No component or end-to-end tests yet |
+| **What works locally** | designed signed-out landing (Minetta-only Try it demo), designed sign-in/sign-up, logout, email confirmation, protected `/dashboard`; create / edit / cancel a watch; timezone-aware drop-time calculation; 8 real seeded restaurants |
+| **What is not designed yet** | My Watches (`/dashboard`), the Restaurants catalog, the create/edit-watch sheet — **this is the next task** |
+| **What does not exist yet** | the AI parse endpoint (**parked — do not build**, see §5), the scheduler that actually sends notifications, most course documents (§8) |
+| **Tests** | Vitest, 6 files, **145 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — returns 200 but still serves the **"coming soon" placeholder**. Verified, not assumed |
 
 ### 🔴 The deployment picture, which is easy to misread
@@ -29,7 +30,7 @@ Three branches, and none of the real product is deployed:
 | `origin/main` | `7857ff6` | placeholder + first handover. **This is what Vercel serves.** |
 | `main` (local) | `498c845` | ⚠️ 1 commit ahead of `origin/main`, **unpushed** — auth was fast-forwarded onto local `main` and never pushed |
 | `feat/auth` | `b3d1d71` | fully contained in `feat/watches`; nothing unique left on it |
-| `feat/watches` | `e4a89b5` | everything: auth, watches, seed, tests |
+| `feat/watches` | working branch | everything: auth, watches, seed, tests, design foundation, landing, designed auth screens |
 
 That local-`main` commit is a loose end. It is harmless while unpushed, but pushing `main`
 by reflex would deploy auth **without** the Vercel environment variables, which is the one
@@ -88,18 +89,18 @@ from manually tracking release schedules across several booking platforms.
 | --- | --- | --- |
 | Framework | Next.js 16.3.1 (App Router, Turbopack) | ✅ working |
 | Language | TypeScript 5 (strict) | ✅ |
-| UI | Tailwind CSS v4 | 🟡 all screens built and functional, but **undesigned** |
+| UI | Tailwind CSS v4 | 🟡 design system applied; landing + auth designed; dashboard / catalog / sheet still need the rest of the visual treatment |
 | Linting | ESLint 9 (`eslint-config-next`) | ✅ passing |
 | Validation | Zod 4.4.3 | ✅ auth forms, watch forms, and the seed data |
 | Database | Supabase Postgres (free plan, London / eu-west-2) | ✅ tables created, 3 migrations applied |
 | ORM | Prisma 7.9.1 + `@prisma/adapter-pg` | ✅ connected and verified |
 | Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants |
-| Testing | Vitest 4.1.11 | ✅ 136 unit tests passing; ❌ no component or E2E tests |
+| Testing | Vitest 4.1.11 | ✅ 145 unit tests passing (6 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
-| UI design | none — Tailwind defaults, no design system | 🔜 **the next task** |
-| AI parse endpoint | provider not chosen yet | 🔜 planned, see §5 |
+| UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 foundation + landing + auth done; **My Watches is next** |
+| AI parse endpoint | provider not chosen yet | ⏸️ **parked** — do not build, see §5 |
 
 There is deliberately **no** UI component library, form library, date library or timezone
 library. Dates and timezones are handled with the platform's own `Intl` API (§5), which is a
@@ -110,7 +111,7 @@ decision to be able to defend rather than an omission.
 - **GitHub (private):** https://github.com/AmitNeumann/firstseat
   - `main` — `origin/main` is `7857ff6`, the placeholder. This is what is deployed.
   - `feat/auth` — `b3d1d71`, now entirely contained in `feat/watches`.
-  - `feat/watches` — the working branch; `e4a89b5` locally, 2 commits not yet pushed.
+  - `feat/watches` — the working branch; in sync with origin at the time of writing. Check `git status -sb`.
   - Open a PR at https://github.com/AmitNeumann/firstseat/pull/new/feat/watches
 - **Live site:** https://firstseat-lemon.vercel.app — ⚠️ still serving the placeholder,
   because everything real is on a branch. Vercel also builds a **preview URL** for
@@ -270,28 +271,30 @@ firstseat/
     ├── proxy.ts             ← refreshes the auth session cookie on every request (§6)
     ├── app/
     │   ├── layout.tsx       ← root layout, fonts, metadata
-    │   ├── page.tsx         ← landing page; CTA depends on whether you are signed in
-    │   ├── globals.css      ← Tailwind v4 import + @theme tokens (no tailwind.config.js in v4)
+    │   ├── page.tsx         ← designed signed-out landing; signed-in visitors redirect to /dashboard
+    │   ├── globals.css      ← Tailwind v4 + @theme tokens (cream/clay/honey/apricot; light only)
     │   ├── (auth)/          ← route group: adds a layout without adding a path segment
-    │   │   ├── layout.tsx   ← centred card frame
+    │   │   ├── layout.tsx   ← site header + footer around the auth pages
     │   │   ├── login/page.tsx
     │   │   └── signup/page.tsx
     │   ├── auth/confirm/route.ts   ← where the emailed confirmation link lands
-    │   ├── dashboard/page.tsx      ← protected; lists this user's watches
+    │   ├── dashboard/page.tsx      ← protected; lists this user's watches (foundation tokens only)
     │   └── watches/
     │       ├── new/page.tsx        ← create a watch
     │       └── [id]/edit/page.tsx  ← edit one; 404s for someone else's watch
     ├── components/
     │   ├── forms/fields.tsx        ← FieldShell / SelectField / DateField / FormAlert / SubmitButton
-    │   ├── auth/                   ← form-fields, login-form, signup-form, sign-out-button
+    │   ├── site/                   ← logo, sticky header, footer
+    │   ├── landing/                ← Try it card + Minetta preview (signed-out only)
+    │   ├── auth/                   ← auth-frame, form-fields, login-form, signup-form, sign-out-button
     │   └── watches/
     │       ├── create-watch-form.tsx   ← Client Component, useActionState
     │       ├── edit-watch-form.tsx
     │       ├── watch-fieldset.tsx      ← date + party size + meal, shared by both forms
     │       ├── restaurant-picker.tsx   ← accessible type-ahead combobox
     │       ├── drop-preview.tsx        ← live "when will this open" preview while filling the form
-    │       ├── drop-times.tsx          ← the dual-timezone display
-    │       └── watch-card.tsx          ← one watch on the dashboard
+    │       ├── drop-times.tsx          ← honey dual-timezone panel (the signature moment)
+    │       └── watch-card.tsx          ← one watch on the dashboard (not yet fully designed)
     ├── generated/prisma/    ← GENERATED, git-ignored, rebuilt by `prisma generate`
     └── lib/
         ├── prisma.ts        ← Prisma client singleton (see §6)
@@ -314,14 +317,16 @@ firstseat/
             ├── actions.ts     ← "use server": createWatch, updateWatch, cancelWatch
             ├── queries.ts     ← server-only reads, every one scoped by userId
             ├── options.ts     ← restaurant search/filter (pure, tested)
-            └── format.ts      ← display formatting, incl. dual-timezone phrasing
+            ├── landing-demo.ts ← Minetta-only sentence parser for the signed-out Try it card
+            └── format.ts      ← display formatting, incl. dual-timezone phrasing and countdown
 
-tests/                       ← Vitest, 136 tests
+tests/                       ← Vitest, 145 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
 ├── seed-validation.test.ts  ← the hand-entered-data schema
 ├── restaurant-search.test.ts
-└── watch-schema.test.ts
+├── watch-schema.test.ts
+└── landing-demo.test.ts     ← Minetta-only parse + countdown phrasing
 ```
 
 ### How a sign-in actually flows
@@ -350,7 +355,9 @@ tests/                       ← Vitest, 136 tests
 Entirely linear — no merge commits, so any eventual merge is a fast-forward.
 
 ```
-* e4a89b5  Add researched release rules for seven more New York restaurants   ← feat/watches
+* 883bc45  Apply the visual design system and the signed-out landing page     ← feat/watches
+* a42cb41  Bring the handover up to date for the watches feature and the UI work
+* e4a89b5  Add researched release rules for seven more New York restaurants
 * 64f259a  Record any booking platform as a validated slug instead of an enum
 * 792c4e8  Show drop times in both timezones, add restaurant search and watch editing
 * f678a7e  Add the researched release rule for Minetta Tavern
@@ -497,44 +504,95 @@ Release times are usefully varied — 07:00, 09:00, 10:00 and midnight, with win
 > query parameter from the session it was copied out of. It works and passes validation, but
 > it is session-scoped rather than a stable venue page and should be replaced.
 
-### 🔜 Immediate next step: UI and visual design
+### Built: visual design — foundation, landing, and auth
 
-**This is the next task, and the reason this handover was written.** Every screen currently
-uses unstyled-to-lightly-styled Tailwind defaults. The functionality is there; the product
-does not yet look like a product.
+The product now looks like the Claude Design file on three surfaces. Logic was not
+rewritten to get there.
 
-What exists to design against — no new features are needed for this work:
+**Shared foundation**
+
+- **Fonts** in `src/app/layout.tsx` via `next/font/google` (self-hosted, no Google request
+  from the browser): **Fraunces** (logo + landing H1), **Newsreader** (titles, times),
+  **Manrope** (UI). Geist is gone.
+- **Colour tokens** in `src/app/globals.css`: cream page `#FCFBF7`, clay `#C75C40`, honey
+  `#F4E3C1`, apricot `#E8A98C`, espresso `#211C18`. Existing utilities (`bg-accent`,
+  `text-muted`, …) are remapped onto this palette.
+- **Light theme only.** The `prefers-color-scheme: dark` block was removed. The only dark
+  surface in the design is the "window is open" reveal card, which is a one-off, not a
+  theme.
+- **Shared fields** in `src/components/forms/fields.tsx`: uppercase micro-labels, cream
+  inputs, clay primary button and clay focus ring. Auth and watch forms both render
+  through these.
+
+**Landing `/` (signed out) — designed**
+
+Sticky header (logo + Sign in / Sign up, no catalog tab), Fraunces headline, the Minetta
+"Try it" card, three feature cards, footer. Signed-in visitors hitting `/` are redirected
+to `/dashboard`.
+
+The catalog is gated. `getLandingDemoRestaurant()` loads **only Minetta Tavern** from the
+database — the other seven restaurants never leave the server. The drop times in the demo
+come from the real `computeDropMoment`. Typing another restaurant name does not reveal it.
+
+The Try it card uses a small local parser in `src/lib/watches/landing-demo.ts`. **Do not
+treat gaps in that parser as a bug to fix.** It is a stand-in until the real AI parse
+endpoint exists; at that point the demo will be wired to the real parser (still
+Minetta-only for signed-out visitors). See the parked note below.
+
+**Sign in / Sign up — designed**
+
+Two-column layout (pitch left, form right), honey benefits panel, timezone row on signup
+showing the browser's IANA zone. Same Server Actions, same Zod, same `requireAppUser`.
+Passwords still never touch a Client Component except as a form field.
+
+Two deliberate omissions, both defensible:
+
+1. **No name field** — the `users` table has no name column. A field we do not store
+   would be decoration.
+2. **No "we'll start watching Minetta" pending banner** — that only makes sense once a
+   pending watch is actually saved, which belongs with the create-watch sheet.
+
+**Design reference.** The Claude Design handoff bundle (README with tokens and per-screen
+specs, plus HTML prototypes). It is not in the repo; re-share it in the next chat.
+
+### 🔜 Immediate next step: finish the visual design, screen by screen
+
+Keep all working logic intact: auth via Server Actions + `requireAppUser()`,
+`computeDropMoment` and its tests, the ARIA combobox in `restaurant-picker.tsx`
+(restyle, do not rewrite), the dual-timezone display, and the 8 real seeded restaurants.
+Every Prisma read of user data stays scoped by `userId`.
 
 | Screen | Route | State |
 | --- | --- | --- |
-| Landing | `/` | placeholder copy, CTA varies by sign-in state |
-| Signup / login | `/signup`, `/login` | centred card, working validation and error states |
-| Dashboard | `/dashboard` | lists this user's watches as cards |
-| Create watch | `/watches/new` | combobox, fieldset, live drop preview |
-| Edit watch | `/watches/[id]/edit` | same fieldset, restaurant fixed |
+| Landing | `/` | ✅ designed (Minetta-only Try it; catalog gated) |
+| Signup / login | `/signup`, `/login` | ✅ designed (two-column; no name field, no pending banner) |
+| My Watches | `/dashboard` | 🔜 **next** — foundation tokens only. Needs the full designed cards: live countdown, side-by-side dual-timezone panel (already in `drop-times.tsx`), title **My Watches** (capital W), Edit/Cancel with coloured buttons, empty state. Spec is in the design README §4. |
+| Restaurants catalog | not routed yet | 🔜 signed-in only, card layout (no list view). Signed-out users have no tab and no route. |
+| Create / edit watch | `/watches/new`, `/watches/[id]/edit` | 🔜 bottom sheet. AI natural-language input on the same cream background (no separate dark box) plus the existing manual fields. **Do not show the computed drop time until after submit** — it belongs on the resulting My Watches card. |
 
-Guidance for whoever picks this up:
+Guidance that still applies:
 
-- **Theme tokens go in the `@theme` block of `src/app/globals.css`.** Tailwind v4 has no
-  `tailwind.config.js` (§6). Some tokens already exist — extend them rather than scattering
-  literal colours through components.
-- **Reuse the shared field components** in `src/components/forms/fields.tsx`. Auth and watch
-  forms both render through them, so restyling there restyles everything consistently. That
-  sharing is the main reason a redesign is tractable at all.
-- **The dual-timezone display is the product's signature moment.** It is currently plain
-  text; it is the thing most worth designing well, and the thing a demo audience will look at.
-- **Do not break the accessibility already in the combobox** — it implements the ARIA
-  combobox pattern with keyboard navigation. Restyle it; do not rewrite it casually.
-- **Empty states are missing** and matter for a demo: a dashboard with no watches, and a
-  search that matches no restaurant.
-- Loading and pending states exist via `useActionState`'s pending flag but are visually
-  minimal.
+- **Theme tokens stay in the `@theme` block of `src/app/globals.css`.** Do not scatter
+  literal colours through new components.
+- **Reuse `src/components/forms/fields.tsx`.** Restyling there restyles every form.
+- **The dual-timezone panel is already the designed honey panel** in
+  `src/components/watches/drop-times.tsx`. Build the rest of the My Watches card around it;
+  do not revert it to plain text.
+- **Do not break the accessibility already in the combobox** — ARIA combobox with keyboard
+  navigation. Restyle it; do not rewrite it casually.
+- Empty states still matter for a demo: a dashboard with no watches, and a search that
+  matches no restaurant.
+- Go one screen at a time. Explain each screen in plain language before building it.
 
-### 🔜 After that: the AI natural-language parse endpoint
+### ⏸️ Parked: the AI natural-language parse endpoint — do not build yet
 
-**The idea.** The user types one sentence — *"table for 2 at Via Carota next Friday for
-dinner"* — and it is turned into the four structured fields the form needs, which they then
-confirm.
+**A deliberate decision, not leftover work.** Do not start this, and do not "fix" the
+landing Try it parser as a substitute. That parser is a local stand-in; when this endpoint
+is built, the demo will be wired to it (Minetta-only for signed-out visitors).
+
+**The idea, for when it is un-parked.** The user types one sentence — *"table for 2 at Via
+Carota next Friday for dinner"* — and it is turned into the four structured fields the
+form needs, which they then confirm.
 
 **The flow, and the rule that matters most:**
 
@@ -785,12 +843,12 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 | # | Deliverable | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder — everything real is on `feat/watches`. Merging it (after §0) is what makes this deliverable real, and it is the highest-value unblocked task after the UI work |
+| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder — everything real is on `feat/watches`. Merging it (after §0) is what makes this deliverable real; finish the remaining UI screens first |
 | 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders before submitting) |
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
-| 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The 136 existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **136 unit tests over 5 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas and restaurant search. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The 145 existing tests are raw material — write the spec from what they already assert, then fill the gaps |
+| 6 | Test code | 🟡 **Partly** | Vitest installed; **145 unit tests over 6 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search and the Minetta landing parser. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and per-user rate limiting once the AI endpoint exists |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
@@ -819,7 +877,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (136 tests)
+npm test                    # Vitest, single run (145 tests)
 npm run test:watch          # Vitest in watch mode
 
 # Prisma / database
