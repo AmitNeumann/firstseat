@@ -10,7 +10,7 @@ export function LoginForm({ notice }: { notice?: string }) {
   const [state, action, pending] = useActionState(login, undefined);
 
   return (
-    <form action={action} className="space-y-4" noValidate={false}>
+    <form action={action} className="flex flex-col gap-3.5" noValidate={false}>
       {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
       {!state && notice && <FormAlert tone="error">{notice}</FormAlert>}
 
@@ -19,6 +19,7 @@ export function LoginForm({ notice }: { notice?: string }) {
         name="email"
         type="email"
         autoComplete="email"
+        placeholder="you@example.com"
         defaultValue={state?.email}
         errors={state?.errors?.email}
       />
@@ -28,6 +29,7 @@ export function LoginForm({ notice }: { notice?: string }) {
         name="password"
         type="password"
         autoComplete="current-password"
+        placeholder="••••••••"
         errors={state?.errors?.password}
       />
 

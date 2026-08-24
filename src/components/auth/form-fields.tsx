@@ -15,6 +15,7 @@ type FieldProps = {
   defaultValue?: string;
   hint?: string;
   errors?: string[];
+  placeholder?: string;
 };
 
 export function Field({
@@ -25,6 +26,7 @@ export function Field({
   defaultValue,
   hint,
   errors,
+  placeholder,
 }: FieldProps) {
   return (
     <FieldShell label={label} name={name} hint={hint} errors={errors}>
@@ -35,6 +37,7 @@ export function Field({
           type={type}
           autoComplete={autoComplete}
           defaultValue={defaultValue}
+          placeholder={placeholder}
           // The browser check is a convenience. Both forms are re-validated on the
           // server, which is the only check that counts.
           required

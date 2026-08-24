@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AuthFrame } from "@/components/auth/auth-frame";
 import { LoginForm } from "@/components/auth/login-form";
 import { confirmErrorMessage } from "@/lib/auth/confirm-errors";
 import { getAuthUser } from "@/lib/auth/dal";
@@ -27,20 +27,20 @@ export default async function LoginPage({
   const notice = confirmErrorMessage(error);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted">Sign in to manage your watches.</p>
-      </div>
-
+    <AuthFrame
+      eyebrow="Welcome back"
+      headline="Your watches are exactly where you left them."
+      sub="Sign in to see what opens next and how long you have until the drop."
+      points={[
+        "Live countdowns for every watch",
+        "New York time and your time, side by side",
+        "One tap to the booking page",
+      ]}
+      formTitle="Sign in"
+      swapHref="/signup"
+      swapLabel="New to FirstSeat? Create an account"
+    >
       <LoginForm notice={notice} />
-
-      <p className="text-sm text-muted">
-        No account yet?{" "}
-        <Link href="/signup" className="font-medium text-foreground underline underline-offset-4">
-          Create one
-        </Link>
-      </p>
-    </div>
+    </AuthFrame>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useSyncExternalStore } from "react";
 
 import { signup } from "@/lib/auth/actions";
 import { Field } from "@/components/auth/form-fields";
 import { FormAlert, SubmitButton } from "@/components/forms/fields";
+import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
 
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signup, undefined);
@@ -33,7 +34,7 @@ export function SignupForm() {
   }
 
   return (
-    <form action={submit} className="space-y-4">
+    <form action={submit} className="flex flex-col gap-3.5">
       {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
 
       <Field
@@ -41,6 +42,7 @@ export function SignupForm() {
         name="email"
         type="email"
         autoComplete="email"
+        placeholder="you@example.com"
         defaultValue={state?.email}
         errors={state?.errors?.email}
       />
@@ -50,13 +52,48 @@ export function SignupForm() {
         name="password"
         type="password"
         autoComplete="new-password"
+        placeholder="••••••••"
         hint="At least 8 characters."
         errors={state?.errors?.password}
       />
+
+      <TimezoneRow />
 
       <SubmitButton pending={pending} pendingLabel="Creating account…">
         Create account
       </SubmitButton>
     </form>
   );
+}
+
+/**
+ * Shows the browser's IANA zone so the user can see what we will store.
+ *
+ * `useSyncExternalStore` is how a Client Component reads a browser-only value without a
+ * `useEffect` setState (which the React Compiler forbids) and without hydrating a
+ * mismatch: the server snapshot is the column default, then the client replaces it.
+ */
+function TimezoneRow() {
+  const timezone = useSyncExternalStore(
+    subscribeNever,
+    readBrowserTimezone,
+    () => DEFAULT_TIMEZONE,
+  );
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[10px] bg-warm-cream px-3.5 py-[11px]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+        Your timezone
+      </p>
+      <p className="font-serif text-[16.5px] font-medium text-espresso">{timezone}</p>
+    </div>
+  );
+}
+
+function subscribeNever() {
+  return () => {};
+}
+
+function readBrowserTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone ?? DEFAULT_TIMEZONE;
 }
