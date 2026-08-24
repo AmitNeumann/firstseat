@@ -4,18 +4,24 @@
  * No hooks, so these stay usable from either a Server or a Client Component. Every input
  * takes its errors as a prop rather than validating anything itself — validation happens
  * on the server, and these only display the result.
+ *
+ * Visual language: uppercase micro-labels, cream fields on a white card, clay for the
+ * primary action and for anything that went wrong. Callers can pass `controlClassName`
+ * when a field sits on cream instead of white (the watch sheet uses a white fill).
  */
 
 const controlClasses =
-  "w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none " +
-  "transition-colors placeholder:text-muted focus:border-accent " +
-  "focus:ring-2 focus:ring-accent/25 aria-invalid:border-danger";
+  "w-full rounded-control border border-border bg-background px-3.5 py-3 text-[15px] " +
+  "text-foreground outline-none transition-[background-color,border-color,color] duration-150 " +
+  "placeholder:text-placeholder aria-invalid:border-clay";
 
 type ShellProps = {
   label: string;
   name: string;
   hint?: string;
   errors?: string[];
+  /** Extra classes for the control, e.g. `bg-card` on a cream surface. */
+  controlClassName?: string;
   children: (props: {
     id: string;
     "aria-invalid": true | undefined;
@@ -28,13 +34,23 @@ type ShellProps = {
  * The label / hint / error wrapper every field shares, including the aria wiring that
  * connects a message to the input a screen reader is sitting on.
  */
-export function FieldShell({ label, name, hint, errors, children }: ShellProps) {
+export function FieldShell({
+  label,
+  name,
+  hint,
+  errors,
+  controlClassName,
+  children,
+}: ShellProps) {
   const hasErrors = Boolean(errors?.length);
   const describedBy = hasErrors ? `${name}-error` : hint ? `${name}-hint` : undefined;
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={name} className="block text-sm font-medium">
+      <label
+        htmlFor={name}
+        className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted"
+      >
         {label}
       </label>
 
@@ -42,7 +58,9 @@ export function FieldShell({ label, name, hint, errors, children }: ShellProps) 
         id: name,
         "aria-invalid": hasErrors || undefined,
         "aria-describedby": describedBy,
-        className: controlClasses,
+        className: controlClassName
+          ? `${controlClasses} ${controlClassName}`
+          : controlClasses,
       })}
 
       {hint && !hasErrors && (
@@ -52,7 +70,7 @@ export function FieldShell({ label, name, hint, errors, children }: ShellProps) 
       )}
 
       {hasErrors && (
-        <ul id={`${name}-error`} className="space-y-0.5 text-xs text-danger">
+        <ul id={`${name}-error`} className="space-y-0.5 text-xs text-clay-dark">
           {errors!.map((error) => (
             <li key={error}>{error}</li>
           ))}
@@ -76,6 +94,7 @@ export function SelectField({
   placeholder,
   hint,
   errors,
+  controlClassName,
 }: {
   label: string;
   name: string;
@@ -85,9 +104,16 @@ export function SelectField({
   placeholder?: string;
   hint?: string;
   errors?: string[];
+  controlClassName?: string;
 }) {
   return (
-    <FieldShell label={label} name={name} hint={hint} errors={errors}>
+    <FieldShell
+      label={label}
+      name={name}
+      hint={hint}
+      errors={errors}
+      controlClassName={controlClassName}
+    >
       {(props) => (
         <select {...props} name={name} defaultValue={defaultValue ?? ""} required>
           {placeholder && (
@@ -115,6 +141,7 @@ export function DateField({
   hint,
   errors,
   onChange,
+  controlClassName,
 }: {
   label: string;
   name: string;
@@ -126,9 +153,16 @@ export function DateField({
   errors?: string[];
   /** Notified as the date changes, so a caller can preview something from it. */
   onChange?: (value: string) => void;
+  controlClassName?: string;
 }) {
   return (
-    <FieldShell label={label} name={name} hint={hint} errors={errors}>
+    <FieldShell
+      label={label}
+      name={name}
+      hint={hint}
+      errors={errors}
+      controlClassName={controlClassName}
+    >
       {(props) => (
         <input
           {...props}
@@ -154,15 +188,15 @@ export function FormAlert({
 }) {
   const toneClasses =
     tone === "error"
-      ? "border-danger/30 bg-danger/10 text-danger"
-      : "border-border bg-background text-foreground";
+      ? "border-apricot/50 bg-honey-light text-clay-dark"
+      : "border-honey-border bg-honey text-clay-text";
 
   return (
     <div
       // Announced by screen readers when the action comes back, rather than silently
       // appearing above the form.
       role={tone === "error" ? "alert" : "status"}
-      className={`space-y-2 rounded-lg border px-3 py-2 text-sm ${toneClasses}`}
+      className={`space-y-2 rounded-xl border px-3.5 py-3 text-[13px] font-semibold ${toneClasses}`}
     >
       {children}
     </div>
@@ -182,8 +216,9 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground
-                 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded-button bg-clay px-3.5 py-3.5 text-[15px] font-semibold
+                 text-cream-on-clay hover:bg-clay-dark disabled:pointer-events-none
+                 disabled:opacity-60"
     >
       {pending ? pendingLabel : children}
     </button>

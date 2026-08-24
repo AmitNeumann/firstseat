@@ -1,53 +1,72 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { LandingTryIt } from "@/components/landing/try-it-card";
+import { SiteFooter } from "@/components/site/footer";
+import { SiteHeader } from "@/components/site/header";
 import { getAuthUser } from "@/lib/auth/dal";
+import { getLandingDemoRestaurant } from "@/lib/watches/queries";
 
 export default async function Home() {
   // Deliberately the auth user and not the app user: a public page should not trigger a
   // database write just to decide which link to show.
-  const signedIn = Boolean(await getAuthUser());
+  if (await getAuthUser()) {
+    redirect("/dashboard");
+  }
+
+  // One restaurant, by name. The rest of the catalog never leaves the server.
+  const demoRestaurant = await getLandingDemoRestaurant();
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 px-4 py-16">
-      <div className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Never miss a table again
-        </h1>
-        <p className="text-base text-muted sm:text-lg">
-          The best restaurants release their tables on a fixed schedule, and they
-          are gone in seconds. Tell FirstSeat where you want to eat and it will
-          alert you moments before the table becomes bookable.
-        </p>
-      </div>
+    <div className="flex min-h-full flex-col">
+      <SiteHeader signedIn={false} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        {signedIn ? (
-          <Link
-            href="/dashboard"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground
-                       transition-opacity hover:opacity-90"
-          >
-            Go to your watches
-          </Link>
-        ) : (
-          <>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground
-                         transition-opacity hover:opacity-90"
-            >
-              Create an account
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium
-                         transition-colors hover:bg-card"
-            >
-              Sign in
-            </Link>
-          </>
-        )}
-      </div>
-    </main>
+      <main className="mx-auto flex w-full max-w-[1060px] flex-1 flex-col items-center gap-5 px-[clamp(16px,5vw,32px)] pt-[clamp(40px,8vw,86px)] pb-[72px] text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-clay">
+          New York
+        </p>
+
+        <h1 className="max-w-[20ch] font-display text-[clamp(34px,7vw,58px)] font-semibold leading-[1.04] tracking-[-0.028em] text-espresso">
+          Be first in line for New York&apos;s hardest tables.
+        </h1>
+
+        <p className="max-w-[46ch] font-serif text-[clamp(17px,2.4vw,21px)] font-light leading-normal text-soft">
+          We know the minute each restaurant releases its book — and we tap you minutes
+          before, in your own timezone, with the booking link ready.
+        </p>
+
+        <LandingTryIt restaurant={demoRestaurant} />
+
+        <section className="mt-[clamp(26px,6vw,52px)] grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] gap-3.5">
+          <article className="rounded-panel border border-border bg-card p-[22px] text-left">
+            <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
+              Tell us the table
+            </h2>
+            <p className="mt-2 text-[13.5px] text-muted">
+              A sentence is enough. We resolve the restaurant, date, meal and party.
+            </p>
+          </article>
+
+          <article className="rounded-panel border border-honey-border bg-honey-light p-[22px] text-left">
+            <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
+              We do the math
+            </h2>
+            <p className="mt-2 text-[13.5px] text-honey-muted">
+              Each room&apos;s release rule, converted to New York time and yours.
+            </p>
+          </article>
+
+          <article className="rounded-panel border border-[#E8CFA0] bg-honey p-[22px] text-left">
+            <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-clay-text">
+              The reveal
+            </h2>
+            <p className="mt-2 text-[13.5px] text-[#8A5A2E]">
+              Minutes before the drop, your phone buzzes with the link.
+            </p>
+          </article>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
   );
 }

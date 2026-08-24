@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import { DropTimes } from "@/components/watches/drop-times";
 import { DropAlertStatus } from "@/generated/prisma/enums";
-import { MEAL_LABELS, formatDate, platformLabel } from "@/lib/watches/format";
+import { DEFAULT_ALERT_LEAD_MINUTES } from "@/lib/watches/drop-time";
+import { MEAL_LABELS, formatDate, formatTime, platformLabel } from "@/lib/watches/format";
 import { cancelWatch } from "@/lib/watches/actions";
 import type { UserWatch } from "@/lib/watches/queries";
 
@@ -69,12 +70,16 @@ export function WatchCard({ watch, timezone }: { watch: UserWatch; timezone: str
 
             <DropTimes
               dropDatetime={alert.dropDatetime}
-              alertAt={
-                alert.status === DropAlertStatus.SCHEDULED ? alert.alertAt : undefined
-              }
               restaurantZone={alert.releaseRule.timezone}
               userZone={timezone}
             />
+
+            {alert.status === DropAlertStatus.SCHEDULED && (
+              <p className="text-[12.5px] text-muted">
+                We alert you {DEFAULT_ALERT_LEAD_MINUTES} minutes before, at{" "}
+                {formatTime(alert.alertAt, timezone)} your time.
+              </p>
+            )}
           </li>
         ))}
       </ul>

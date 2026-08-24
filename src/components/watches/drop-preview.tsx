@@ -1,7 +1,7 @@
 import { DropTimes } from "@/components/watches/drop-times";
-import { platformLabel } from "@/lib/watches/format";
+import { computeDropMoment, DEFAULT_ALERT_LEAD_MINUTES } from "@/lib/watches/drop-time";
+import { formatTime, platformLabel } from "@/lib/watches/format";
 import type { RestaurantOption } from "@/lib/watches/options";
-import { computeDropMoment } from "@/lib/watches/drop-time";
 
 /**
  * When this table would open, shown while the form is still being filled in.
@@ -52,10 +52,13 @@ export function DropPreview({
           </p>
           <DropTimes
             dropDatetime={moment.dropDatetime}
-            alertAt={moment.alertAt}
             restaurantZone={rule.timezone}
             userZone={userZone}
           />
+          <p className="text-[12.5px] text-muted">
+            We alert you {DEFAULT_ALERT_LEAD_MINUTES} minutes before, at{" "}
+            {formatTime(moment.alertAt, userZone)} your time.
+          </p>
         </div>
       ))}
     </div>

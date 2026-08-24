@@ -1,45 +1,149 @@
 @import "tailwindcss";
 
+/*
+ * FirstSeat design tokens.
+ *
+ * Named after the design README so a colour in CSS means the same thing as a colour
+ * in the spec. Existing utilities (background, foreground, card, muted, border, accent)
+ * are remapped onto this palette so today's screens pick up the warmth without a rewrite.
+ *
+ * Light theme only. The espresso "window is open" card is a one-off surface, not dark mode.
+ */
 :root {
-  --background: #f8f8f7;
-  --foreground: #171717;
-  --card: #ffffff;
-  --muted: #6b6b6b;
-  --border: #e4e4e1;
-  --accent: #b3261e;
-  --accent-foreground: #ffffff;
-  --danger: #b3261e;
+  --cream: #fcfbf7;
+  --white: #ffffff;
+  --warm-cream: #f6f3ea;
+  --honey-light: #faf2e2;
+  --honey: #f4e3c1;
+  --honey-border: #f0dfc0;
+  --honey-divider: #ebd9b8;
+  --apricot: #e8a98c;
+  --clay: #c75c40;
+  --clay-dark: #a8452c;
+  --clay-text: #8a4a1e;
+  --espresso: #211c18;
+  --espresso-2: #2b2521;
+  --text-muted: #8a8178;
+  --text-soft: #5f574e;
+  --honey-text-muted: #8a6a48;
+  --honey-label: #a98b62;
+  --tan-label: #b79a6e;
+  --border: #eae6da;
+  --border-warm: #e4d9c4;
+  --cream-on-clay: #fff8f0;
+  --placeholder: #b4aba0;
+  --dark-card-body: #f4e3c1;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-muted: var(--muted);
+  --color-cream: var(--cream);
+  --color-white: var(--white);
+  --color-warm-cream: var(--warm-cream);
+  --color-honey-light: var(--honey-light);
+  --color-honey: var(--honey);
+  --color-honey-border: var(--honey-border);
+  --color-honey-divider: var(--honey-divider);
+  --color-apricot: var(--apricot);
+  --color-clay: var(--clay);
+  --color-clay-dark: var(--clay-dark);
+  --color-clay-text: var(--clay-text);
+  --color-espresso: var(--espresso);
+  --color-espresso-2: var(--espresso-2);
+  --color-soft: var(--text-soft);
+  --color-honey-muted: var(--honey-text-muted);
+  --color-honey-label: var(--honey-label);
+  --color-tan: var(--tan-label);
+  --color-border-warm: var(--border-warm);
+  --color-cream-on-clay: var(--cream-on-clay);
+  --color-placeholder: var(--placeholder);
+  --color-dark-card-body: var(--dark-card-body);
+
+  /* Aliases the existing screens already use. */
+  --color-background: var(--cream);
+  --color-foreground: var(--espresso);
+  --color-card: var(--white);
+  --color-muted: var(--text-muted);
   --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent: var(--clay);
+  --color-accent-foreground: var(--cream-on-clay);
+  --color-danger: var(--clay);
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --radius-control: 10px;
+  --radius-button: 11px;
+  --radius-card: 18px;
+  --radius-panel: 16px;
+  --radius-sheet: 22px;
+
+  --shadow-card: 0 18px 44px -32px rgba(33, 28, 24, 0.55);
+  --shadow-auth: 0 22px 50px -36px rgba(167, 92, 64, 0.5);
+  --shadow-sheet: 0 -24px 60px -32px rgba(90, 45, 24, 0.6);
+  --shadow-dark-card: 0 18px 40px -20px rgba(33, 28, 24, 0.6);
+  --shadow-menu: 0 16px 34px -20px rgba(90, 45, 24, 0.45);
+
+  --animate-pop: fs-pop 0.25s ease;
+  --animate-pop-slow: fs-pop 0.45s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0c0c0c;
-    --foreground: #ededed;
-    --card: #171717;
-    --muted: #a1a1a1;
-    --border: #2a2a2a;
-    --accent: #e5484d;
-    --accent-foreground: #ffffff;
-    --danger: #ff6369;
+@keyframes fs-pop {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
   }
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  /* Geist is loaded in `layout.tsx` and exposed as `--font-geist-sans`. */
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: pretty;
+}
+
+::placeholder {
+  color: var(--placeholder);
+}
+
+button {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

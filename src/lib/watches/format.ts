@@ -45,6 +45,62 @@ export function formatTime(instant: Date, timeZone: string): string {
   }).format(instant);
 }
 
+/** e.g. "Tue, 22 Sept 2026" — the calendar day of an instant in `timeZone`. */
+export function formatLongDate(instant: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(instant);
+}
+
+/** e.g. "Thu 24 Sep" — a civil date with no year, for card meta lines. */
+export function formatShortDate(value: string): string {
+  const civil = parseCivilDate(value);
+
+  if (!civil) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+/**
+ * How long until a drop, as the interface prints it.
+ *
+ * Days hide the seconds; under an hour the seconds become the ticking part. Zero or
+ * negative is "OPEN" — the window has already released.
+ */
+export function formatCountdown(remainingMs: number): string {
+  if (remainingMs <= 0) {
+    return "OPEN";
+  }
+
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  if (days > 0) {
+    return `${days}d ${pad(hours)}h ${pad(minutes)}m`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${pad(minutes)}m ${pad(seconds)}s`;
+  }
+
+  return `${pad(minutes)}:${pad(seconds)}`;
+}
+
 /**
  * The place inside an IANA zone name: "America/New_York" becomes "New York".
  *

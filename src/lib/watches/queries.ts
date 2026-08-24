@@ -3,6 +3,7 @@ import "server-only";
 import { DropAlertStatus, WatchStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { timeOfDayFromDate } from "@/lib/time";
+import { LANDING_DEMO_CITY, LANDING_DEMO_NAME } from "@/lib/watches/landing-demo";
 import type { RestaurantOption } from "@/lib/watches/options";
 
 /**
@@ -54,7 +55,53 @@ export async function listBookableRestaurants() {
 export async function listRestaurantOptions(): Promise<RestaurantOption[]> {
   const restaurants = await listBookableRestaurants();
 
-  return restaurants.map((restaurant) => ({
+  return restaurants.map(toRestaurantOption);
+}
+
+/**
+ * The one restaurant the signed-out landing is allowed to name.
+ *
+ * Not `listRestaurantOptions`: that would send the whole catalog to the browser, which
+ * is exactly what gating the list is meant to prevent.
+ */
+export async function getLandingDemoRestaurant(): Promise<RestaurantOption | null> {
+  const restaurant = await prisma.restaurant.findFirst({
+    where: {
+      name: LANDING_DEMO_NAME,
+      city: LANDING_DEMO_CITY,
+      releaseRules: { some: {} },
+    },
+    select: {
+      id: true,
+      name: true,
+      city: true,
+      releaseRules: {
+        orderBy: { platform: "asc" },
+        select: {
+          platform: true,
+          daysInAdvance: true,
+          releaseTime: true,
+          timezone: true,
+        },
+      },
+    },
+  });
+
+  return restaurant ? toRestaurantOption(restaurant) : null;
+}
+
+function toRestaurantOption(restaurant: {
+  id: string;
+  name: string;
+  city: string;
+  releaseRules: {
+    platform: string;
+    daysInAdvance: number;
+    releaseTime: Date;
+    timezone: string;
+  }[];
+}): RestaurantOption {
+  return {
     id: restaurant.id,
     name: restaurant.name,
     city: restaurant.city,
@@ -64,7 +111,7 @@ export async function listRestaurantOptions(): Promise<RestaurantOption[]> {
       releaseTime: timeOfDayFromDate(rule.releaseTime),
       timezone: rule.timezone,
     })),
-  }));
+  };
 }
 
 export type BookableRestaurant = Awaited<
