@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CreateWatchForm } from "@/components/watches/create-watch-form";
+import { DescribeItPlaceholder } from "@/components/watches/describe-it-placeholder";
 import { requireAppUser } from "@/lib/auth/dal";
 import { addDays, civilDateInZone, formatCivilDate } from "@/lib/time";
 import { listRestaurantOptions } from "@/lib/watches/queries";
@@ -50,6 +51,12 @@ export default async function NewWatchPage({
           so we can tell you the exact moment to be ready.
         </p>
       </header>
+
+      {restaurants.length > 0 && (
+        <div className="mt-8 flex flex-col gap-5">
+          <DescribeItPlaceholder />
+        </div>
+      )}
 
       {restaurants.length === 0 ? (
         <section className="mt-3 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
