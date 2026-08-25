@@ -22,6 +22,8 @@ export type RestaurantOption = {
   id: string;
   name: string;
   city: string;
+  /** App path under `public/`, e.g. `/restaurants/minetta-tavern.jpg`. */
+  imageUrl?: string | null;
   rules: RestaurantRuleOption[];
 };
 
@@ -71,6 +73,94 @@ export function filterRestaurants(
   return restaurants.filter((restaurant) => matchesQuery(restaurant, query));
 }
 
+/**
+ * Catalog chips: All, each platform actually present, and "Drops at midnight" when
+ * anyone releases at 00:00.
+ *
+ * The design file also had Tock and Downtown. We do not invent those: there is no Tock
+ * restaurant in the seed, and the schema stores city, not neighborhood.
+ */
+export type CatalogFilterId = "all" | "midnight" | `platform:${string}`;
+
+export type CatalogPill = {
+  id: CatalogFilterId;
+  label: string;
+};
+
+const PLATFORM_PILL_ORDER = ["resy", "tock", "opentable", "doordash"];
+
+export function catalogPills(restaurants: RestaurantOption[]): CatalogPill[] {
+  const slugs = [
+    ...new Set(
+      restaurants.flatMap((restaurant) => restaurant.rules.map((rule) => rule.platform)),
+    ),
+  ];
+  slugs.sort((a, b) => {
+    const aRank = PLATFORM_PILL_ORDER.indexOf(a);
+    const bRank = PLATFORM_PILL_ORDER.indexOf(b);
+    if (aRank === -1 && bRank === -1) {
+      return platformLabel(a).localeCompare(platformLabel(b));
+    }
+    if (aRank === -1) {
+      return 1;
+    }
+    if (bRank === -1) {
+      return -1;
+    }
+    return aRank - bRank;
+  });
+
+  const pills: CatalogPill[] = [
+    { id: "all", label: "All" },
+    ...slugs.map((slug) => ({
+      id: `platform:${slug}` as const,
+      label: platformLabel(slug),
+    })),
+  ];
+
+  if (restaurants.some((restaurant) => restaurant.rules.some(isMidnightDrop))) {
+    pills.push({ id: "midnight", label: "Drops at midnight" });
+  }
+
+  return pills;
+}
+
+export function isMidnightDrop(rule: RestaurantRuleOption): boolean {
+  return rule.releaseTime === "00:00";
+}
+
+/** Search, then the active catalog chip. */
+export function filterCatalog(
+  restaurants: RestaurantOption[],
+  query: string,
+  filter: CatalogFilterId,
+): RestaurantOption[] {
+  return filterRestaurants(restaurants, query).filter((restaurant) =>
+    matchesCatalogFilter(restaurant, filter),
+  );
+}
+
+export function matchesCatalogFilter(
+  restaurant: RestaurantOption,
+  filter: CatalogFilterId,
+): boolean {
+  if (filter === "all") {
+    return true;
+  }
+
+  if (filter === "midnight") {
+    return restaurant.rules.some(isMidnightDrop);
+  }
+
+  const slug = filter.slice("platform:".length);
+  return restaurant.rules.some((rule) => rule.platform === slug);
+}
+
+/** `/watches/new` with this restaurant already chosen. */
+export function watchCreationPath(restaurantId: string): string {
+  return `/watches/new?restaurantId=${encodeURIComponent(restaurantId)}`;
+}
+
 /** e.g. "Minetta Tavern, New York". */
 export function restaurantLabel(restaurant: RestaurantOption): string {
   return `${restaurant.name}, ${restaurant.city}`;
@@ -84,4 +174,29 @@ export function summariseRules(rules: RestaurantRuleOption[]): string {
   return rules
     .map((rule) => `${platformLabel(rule.platform)} · ${rule.daysInAdvance} days ahead`)
     .join(" / ");
+}
+
+/**
+ * Catalog-card schedule line: "Releases 30 days ahead, 00:00 ET".
+ *
+ * New York is written "ET" because that is how the rooms themselves quote the hour.
+ * Any other zone falls back to the city in the IANA name rather than guessing an
+ * abbreviation we have not looked up.
+ */
+export function describeReleaseSchedule(rules: RestaurantRuleOption[]): string {
+  return rules
+    .map((rule) => {
+      const clock = clockAbbrev(rule.timezone);
+      return `Releases ${rule.daysInAdvance} days ahead, ${rule.releaseTime} ${clock}`;
+    })
+    .join(" / ");
+}
+
+function clockAbbrev(timezone: string): string {
+  if (timezone === "America/New_York") {
+    return "ET";
+  }
+
+  const place = timezone.split("/").at(-1) ?? timezone;
+  return place.replaceAll("_", " ");
 }

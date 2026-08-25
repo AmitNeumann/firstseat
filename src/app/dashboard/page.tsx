@@ -24,7 +24,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex min-h-full flex-col">
-      <SiteHeader signedIn />
+      <SiteHeader signedIn current="watches" user={user} />
 
       <main
         className="mx-auto flex w-full max-w-[900px] flex-1 flex-col gap-4
@@ -33,6 +33,7 @@ export default async function DashboardPage() {
         <WatchList
           watches={watches.map(toDashboardWatch)}
           timezone={user.timezone}
+          firstName={user.firstName}
         />
       </main>
 

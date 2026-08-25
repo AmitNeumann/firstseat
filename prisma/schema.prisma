@@ -55,6 +55,8 @@ enum NotificationStatus {
 model User {
   id        String   @id @db.Uuid
   email     String   @unique
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
   timezone  String   @default("Europe/London")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -68,6 +70,9 @@ model Restaurant {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
   city      String
+  /// App-relative path under `public/`, e.g. `/restaurants/minetta-tavern.jpg`.
+  /// Null means the catalog card shows the striped placeholder.
+  imageUrl  String?  @map("image_url")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

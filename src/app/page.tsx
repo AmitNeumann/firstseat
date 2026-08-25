@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { FeatureIcon } from "@/components/landing/feature-icon";
 import { LandingTryIt } from "@/components/landing/try-it-card";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
@@ -38,6 +39,7 @@ export default async function Home() {
 
         <section className="mt-[clamp(26px,6vw,52px)] grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] gap-3.5">
           <article className="rounded-panel border border-border bg-card p-[22px] text-left">
+            <FeatureIcon name="table" className="mb-3 size-7 text-clay" />
             <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
               Tell us the table
             </h2>
@@ -47,6 +49,7 @@ export default async function Home() {
           </article>
 
           <article className="rounded-panel border border-honey-border bg-honey-light p-[22px] text-left">
+            <FeatureIcon name="math" className="mb-3 size-7 text-honey-muted" />
             <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
               We do the math
             </h2>
@@ -56,6 +59,7 @@ export default async function Home() {
           </article>
 
           <article className="rounded-panel border border-[#E8CFA0] bg-honey p-[22px] text-left">
+            <FeatureIcon name="reveal" className="mb-3 size-7 text-clay-text" />
             <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-clay-text">
               The reveal
             </h2>

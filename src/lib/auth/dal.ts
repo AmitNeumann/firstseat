@@ -17,6 +17,8 @@ import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
 export type AppUser = {
   id: string;
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   timezone: string;
 };
 
@@ -57,7 +59,7 @@ export async function ensureAppUser(
     );
   }
 
-  const select = { id: true, email: true, timezone: true } as const;
+  const select = { id: true, email: true, firstName: true, lastName: true, timezone: true } as const;
 
   const existing = await prisma.user.findUnique({
     where: { id: authUser.id },

@@ -60,12 +60,12 @@ function label(entry: RestaurantSeed): string {
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 async function upsert(tx: TransactionClient, entry: ValidRestaurantSeed): Promise<void> {
-  const { name, city, releaseRule, source } = entry;
+  const { name, city, imageUrl, releaseRule, source } = entry;
 
   const restaurant = await tx.restaurant.upsert({
     where: { name_city: { name, city } },
-    create: { name, city },
-    update: {},
+    create: { name, city, imageUrl: imageUrl ?? null },
+    update: { imageUrl: imageUrl ?? null },
     select: { id: true },
   });
 

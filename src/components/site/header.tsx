@@ -1,16 +1,30 @@
 import Link from "next/link";
 
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { AccountMenu } from "@/components/site/account-menu";
 import { Logo } from "@/components/site/logo";
+import { avatarInitials } from "@/lib/auth/display";
 
 /**
  * Sticky chrome shared by every view.
  *
- * Signed-out visitors see Sign in / Sign up and no catalog tab — the restaurant list is
- * gated. Signed-in visitors see My Watches and New watch. The Restaurants tab arrives
- * with that screen; adding it here before the route exists would be a 404.
+ * Signed-out visitors see Sign in / Sign up and no catalog tab. Signed-in visitors see
+ * My Watches, Restaurants, and an avatar menu (Settings + Sign out). New watch lives on
+ * the My Watches page — it is a page action, not global nav.
  */
-export function SiteHeader({ signedIn }: { signedIn: boolean }) {
+export function SiteHeader({
+  signedIn,
+  current,
+  user,
+}: {
+  signedIn: boolean;
+  current?: "watches" | "restaurants";
+  /** The signed-in person: email for the menu, names for avatar initials. */
+  user?: {
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  };
+}) {
   return (
     <header
       className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border
@@ -20,31 +34,21 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
 
       {signedIn && (
         <nav className="flex flex-wrap items-center gap-1" aria-label="Primary">
-          <Link
-            href="/dashboard"
-            className="rounded-lg bg-honey px-3 py-[7px] text-[13.5px] font-semibold text-[#5A2D18]
-                       hover:bg-apricot"
-          >
+          <NavTab href="/dashboard" active={current === "watches"}>
             My Watches
-          </Link>
+          </NavTab>
+          <NavTab href="/restaurants" active={current === "restaurants"}>
+            Restaurants
+          </NavTab>
         </nav>
       )}
 
       <div className="ml-auto flex flex-wrap items-center gap-2">
         {signedIn ? (
-          <>
-            <Link
-              href="/watches/new"
-              className="rounded-[9px] bg-clay px-[15px] py-[9px] text-[13.5px] font-semibold
-                         text-cream-on-clay hover:bg-clay-dark"
-            >
-              New watch
-            </Link>
-            <SignOutButton
-              className="rounded-[9px] border border-border bg-card px-[13px] py-2
-                         text-[13.5px] font-medium text-muted hover:bg-warm-cream hover:text-soft"
-            />
-          </>
+          <AccountMenu
+            email={user?.email ?? ""}
+            initials={user ? avatarInitials(user) : "?"}
+          />
         ) : (
           <>
             <Link
@@ -66,5 +70,29 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
         )}
       </div>
     </header>
+  );
+}
+
+function NavTab({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={
+        active
+          ? "rounded-lg bg-honey px-3 py-[7px] text-[13.5px] font-semibold text-[#5A2D18] hover:bg-apricot"
+          : "rounded-lg px-3 py-[7px] text-[13.5px] font-medium text-muted hover:bg-warm-cream hover:text-soft"
+      }
+    >
+      {children}
+    </Link>
   );
 }

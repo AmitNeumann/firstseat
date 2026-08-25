@@ -169,6 +169,19 @@ describe("RestaurantSeedSchema", () => {
     expect(paths).toContain("releaseRule.releaseTime");
   });
 
+  it("accepts an optional catalog photo path under /restaurants/", () => {
+    const parsed = RestaurantSeedSchema.safeParse(
+      entry({ imageUrl: "/restaurants/minetta-tavern.jpg" }),
+    );
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.imageUrl).toBe("/restaurants/minetta-tavern.jpg");
+  });
+
+  it("rejects a photo path that is not under /restaurants/", () => {
+    expect(problemPaths(entry({ imageUrl: "/elsewhere/minetta.jpg" }))).toContain("imageUrl");
+    expect(problemPaths(entry({ imageUrl: "../secrets.jpg" }))).toContain("imageUrl");
+  });
 });
 
 describe("missingFields", () => {

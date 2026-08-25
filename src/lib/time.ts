@@ -181,3 +181,13 @@ export function isKnownTimezone(value: string): boolean {
 export function isRegionTimezone(value: string): boolean {
   return value.includes("/") && isKnownTimezone(value);
 }
+
+/**
+ * Every IANA zone the runtime knows, for the settings timezone picker.
+ *
+ * `Intl.supportedValuesOf` is the platform's own list — the same source `isKnownTimezone`
+ * consults — so a value chosen here will always pass validation.
+ */
+export function listIanaTimezones(): string[] {
+  return Intl.supportedValuesOf("timeZone");
+}

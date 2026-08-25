@@ -117,6 +117,14 @@ const releaseRuleSchema = z
 export const RestaurantSeedSchema = z.object({
   name: z.string().trim().min(1, { error: "A restaurant needs a name." }),
   city: z.string().trim().min(1, { error: "A restaurant needs a city." }),
+  imageUrl: z
+    .string()
+    .trim()
+    .regex(/^\/restaurants\/[a-z0-9][a-z0-9._-]*\.(jpg|jpeg|png|webp)$/i, {
+      error:
+        "Use a path like /restaurants/minetta-tavern.jpg (a file under public/restaurants/).",
+    })
+    .optional(),
   releaseRule: releaseRuleSchema,
   source: notPlaceholder.pipe(
     z

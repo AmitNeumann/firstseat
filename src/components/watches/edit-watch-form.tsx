@@ -2,9 +2,10 @@
 
 import { useActionState, useState } from "react";
 
-import { FormAlert, SubmitButton } from "@/components/forms/fields";
+import { SubmitButton } from "@/components/forms/fields";
 import { DropPreview } from "@/components/watches/drop-preview";
 import { WatchFieldset } from "@/components/watches/watch-fieldset";
+import { WatchFormMessage } from "@/components/watches/watch-form-message";
 import { updateWatch } from "@/lib/watches/actions";
 import { restaurantLabel, summariseRules } from "@/lib/watches/options";
 import type { EditableWatch } from "@/lib/watches/queries";
@@ -30,22 +31,6 @@ export function EditWatchForm({
         user's id, so editing the value here just produces "that watch no longer exists".
       */}
       <input type="hidden" name="watchId" value={watch.id} />
-
-      {state?.message && (
-        <FormAlert tone="error">
-          <p>{state.message}</p>
-          {state.bookingUrl && (
-            <a
-              href={state.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block font-medium underline underline-offset-2"
-            >
-              Book it directly
-            </a>
-          )}
-        </FormAlert>
-      )}
 
       <div className="space-y-1.5">
         <p className="block text-sm font-medium">Restaurant</p>
@@ -75,6 +60,8 @@ export function EditWatchForm({
         targetDate={targetDate}
         userZone={timezone}
       />
+
+      <WatchFormMessage state={state} />
 
       <SubmitButton pending={pending} pendingLabel="Saving…">
         Save changes

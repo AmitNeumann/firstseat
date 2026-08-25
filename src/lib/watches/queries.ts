@@ -34,6 +34,7 @@ export async function listBookableRestaurants() {
       id: true,
       name: true,
       city: true,
+      imageUrl: true,
       releaseRules: {
         orderBy: { platform: "asc" },
         select: {
@@ -75,6 +76,7 @@ export async function getLandingDemoRestaurant(): Promise<RestaurantOption | nul
       id: true,
       name: true,
       city: true,
+      imageUrl: true,
       releaseRules: {
         orderBy: { platform: "asc" },
         select: {
@@ -94,6 +96,7 @@ function toRestaurantOption(restaurant: {
   id: string;
   name: string;
   city: string;
+  imageUrl: string | null;
   releaseRules: {
     platform: string;
     daysInAdvance: number;
@@ -105,6 +108,7 @@ function toRestaurantOption(restaurant: {
     id: restaurant.id,
     name: restaurant.name,
     city: restaurant.city,
+    imageUrl: restaurant.imageUrl,
     rules: restaurant.releaseRules.map((rule) => ({
       platform: rule.platform,
       daysInAdvance: rule.daysInAdvance,

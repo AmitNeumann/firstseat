@@ -132,6 +132,42 @@ export function SelectField({
   );
 }
 
+export function TextField({
+  label,
+  name,
+  defaultValue,
+  autoComplete,
+  placeholder,
+  hint,
+  errors,
+  maxLength,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  autoComplete?: string;
+  placeholder?: string;
+  hint?: string;
+  errors?: string[];
+  maxLength?: number;
+}) {
+  return (
+    <FieldShell label={label} name={name} hint={hint} errors={errors}>
+      {(props) => (
+        <input
+          {...props}
+          type="text"
+          name={name}
+          defaultValue={defaultValue}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          maxLength={maxLength}
+        />
+      )}
+    </FieldShell>
+  );
+}
+
 export function DateField({
   label,
   name,

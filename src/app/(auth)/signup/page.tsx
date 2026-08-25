@@ -18,10 +18,10 @@ export default async function SignupPage() {
   return (
     <AuthFrame
       eyebrow="Join FirstSeat"
-      headline="Set the alarm once. Never refresh a booking page again."
+      headline="Never miss a reservation again."
       sub="We turn every restaurant's release rule into your local clock, and nudge you just before the tables appear."
       points={[
-        "Unlimited watches across Resy and Tock",
+        "Unlimited watches on the city's most sought-after tables.",
         `Alerts in your timezone, ${DEFAULT_ALERT_LEAD_MINUTES} minutes early`,
         "Booking link ready the second it opens",
       ]}

@@ -51,6 +51,12 @@ export type ReleaseRuleSeed = {
 export type RestaurantSeed = {
   name: string;
   city: string;
+  /**
+   * App path to a file in `public/restaurants/`, e.g. `/restaurants/minetta-tavern.jpg`.
+   * Optional: the catalog card falls back to the striped placeholder when this is absent
+   * or the file is missing.
+   */
+  imageUrl?: string;
   releaseRule: ReleaseRuleSeed;
 
   /**

@@ -42,6 +42,37 @@ export const LoginSchema = z.object({
   password: z.string().min(1, { error: "Enter your password." }),
 });
 
+/** Settings: the zone used for "your time" on My Watches. */
+export const UpdateTimezoneSchema = z.object({
+  timezone: z
+    .string()
+    .trim()
+    .refine(isKnownTimezone, { error: "Unrecognised timezone." }),
+});
+
+const optionalName = z
+  .string()
+  .trim()
+  .max(40, { error: "Use 40 characters or fewer." })
+  .transform((value) => (value.length === 0 ? null : value));
+
+export const UpdateNameSchema = z.object({
+  firstName: optionalName,
+  lastName: optionalName,
+});
+
+export type SettingsFormState =
+  | {
+      errors?: {
+        timezone?: string[];
+        firstName?: string[];
+        lastName?: string[];
+      };
+      message?: string;
+      notice?: string;
+    }
+  | undefined;
+
 export type AuthFormState =
   | {
       /** Per-field validation messages, keyed by input `name`. */

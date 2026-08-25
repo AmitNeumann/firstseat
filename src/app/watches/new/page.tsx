@@ -11,9 +11,24 @@ export const metadata: Metadata = {
   title: "New watch — FirstSeat",
 };
 
-export default async function NewWatchPage() {
+/** Postgres rejects a malformed uuid outright, so it is filtered before use. */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export default async function NewWatchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ restaurantId?: string }>;
+}) {
   const user = await requireAppUser();
   const restaurants = await listRestaurantOptions();
+  const { restaurantId } = await searchParams;
+  const initialRestaurantId =
+    restaurantId &&
+    UUID_PATTERN.test(restaurantId) &&
+    restaurants.some((restaurant) => restaurant.id === restaurantId)
+      ? restaurantId
+      : undefined;
 
   // The picker's bounds are shown in the user's own zone, which is the calendar they are
   // looking at. The server re-checks against the restaurant's zone, which is the one that
@@ -51,6 +66,7 @@ export default async function NewWatchPage() {
             earliestDate={formatCivilDate(today)}
             latestDate={formatCivilDate(addDays(today, MAX_DAYS_AHEAD))}
             timezone={user.timezone}
+            initialRestaurantId={initialRestaurantId}
           />
         </section>
       )}

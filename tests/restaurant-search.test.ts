@@ -8,18 +8,26 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  catalogPills,
+  describeReleaseSchedule,
+  filterCatalog,
   filterRestaurants,
   matchesQuery,
   normaliseForSearch,
+  watchCreationPath,
   type RestaurantOption,
 } from "@/lib/watches/options";
 
-function restaurant(name: string, city = "New York"): RestaurantOption {
+function restaurant(
+  name: string,
+  city = "New York",
+  rules?: RestaurantOption["rules"],
+): RestaurantOption {
   return {
     id: name,
     name,
     city,
-    rules: [
+    rules: rules ?? [
       {
         platform: "resy",
         daysInAdvance: 30,
@@ -109,5 +117,120 @@ describe("filterRestaurants", () => {
       "Rezdôra",
       "Semma",
     ]);
+  });
+});
+
+describe("catalogPills", () => {
+  it("lists All, each platform that exists, and midnight when someone drops at 00:00", () => {
+    const pills = catalogPills([
+      restaurant("Minetta Tavern"),
+      restaurant("Don Angie", "New York", [
+        {
+          platform: "opentable",
+          daysInAdvance: 7,
+          releaseTime: "09:00",
+          timezone: "America/New_York",
+        },
+      ]),
+    ]);
+
+    expect(pills.map((pill) => pill.id)).toEqual([
+      "all",
+      "platform:resy",
+      "platform:opentable",
+      "midnight",
+    ]);
+    expect(pills.map((pill) => pill.label)).toEqual([
+      "All",
+      "Resy",
+      "OpenTable",
+      "Drops at midnight",
+    ]);
+  });
+
+  it("omits Tock when no restaurant uses it, and omits midnight when nobody drops then", () => {
+    const pills = catalogPills([
+      restaurant("Via Carota", "New York", [
+        {
+          platform: "resy",
+          daysInAdvance: 30,
+          releaseTime: "10:00",
+          timezone: "America/New_York",
+        },
+      ]),
+    ]);
+
+    expect(pills.map((pill) => pill.id)).toEqual(["all", "platform:resy"]);
+  });
+});
+
+describe("filterCatalog", () => {
+  const rooms = [
+    restaurant("Minetta Tavern"),
+    restaurant("Don Angie", "New York", [
+      {
+        platform: "opentable",
+        daysInAdvance: 7,
+        releaseTime: "09:00",
+        timezone: "America/New_York",
+      },
+    ]),
+    restaurant("Via Carota", "New York", [
+      {
+        platform: "resy",
+        daysInAdvance: 30,
+        releaseTime: "10:00",
+        timezone: "America/New_York",
+      },
+    ]),
+  ];
+
+  it("keeps everyone on All", () => {
+    expect(filterCatalog(rooms, "", "all").map((entry) => entry.name)).toEqual([
+      "Minetta Tavern",
+      "Don Angie",
+      "Via Carota",
+    ]);
+  });
+
+  it("narrows to a platform without inventing rooms that are not there", () => {
+    expect(filterCatalog(rooms, "", "platform:opentable").map((entry) => entry.name)).toEqual([
+      "Don Angie",
+    ]);
+    expect(filterCatalog(rooms, "", "platform:tock")).toEqual([]);
+  });
+
+  it("keeps only midnight drops", () => {
+    expect(filterCatalog(rooms, "", "midnight").map((entry) => entry.name)).toEqual([
+      "Minetta Tavern",
+    ]);
+  });
+
+  it("applies search on top of a chip", () => {
+    expect(filterCatalog(rooms, "via", "platform:resy").map((entry) => entry.name)).toEqual([
+      "Via Carota",
+    ]);
+    expect(filterCatalog(rooms, "via", "midnight")).toEqual([]);
+  });
+});
+
+describe("describeReleaseSchedule", () => {
+  it("quotes the New York hour as ET", () => {
+    expect(
+      describeReleaseSchedule([
+        {
+          platform: "resy",
+          daysInAdvance: 30,
+          releaseTime: "00:00",
+          timezone: "America/New_York",
+        },
+      ]),
+    ).toBe("Releases 30 days ahead, 00:00 ET");
+  });
+});
+
+describe("watchCreationPath", () => {
+  it("sends the chosen restaurant into the create-watch form", () => {
+    expect(watchCreationPath("abc-123")).toBe("/watches/new?restaurantId=abc-123");
   });
 });

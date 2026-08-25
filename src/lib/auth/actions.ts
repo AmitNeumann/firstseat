@@ -3,13 +3,17 @@
 import { redirect } from "next/navigation";
 import * as z from "zod";
 
-import { ensureAppUser } from "@/lib/auth/dal";
+import { ensureAppUser, requireAppUser } from "@/lib/auth/dal";
 import {
   LoginSchema,
   SignupSchema,
+  UpdateNameSchema,
+  UpdateTimezoneSchema,
   type AuthFormState,
+  type SettingsFormState,
 } from "@/lib/auth/schemas";
 import { field } from "@/lib/form-data";
+import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/site-origin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -123,4 +127,60 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
 
   redirect("/login");
+}
+
+/**
+ * Updates the signed-in user's timezone. Scoped by `user.id` from `requireAppUser()` —
+ * Prisma bypasses RLS, so that `where` is the authorization.
+ */
+export async function updateTimezone(
+  _previousState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const user = await requireAppUser();
+
+  const parsed = UpdateTimezoneSchema.safeParse({
+    timezone: field(formData, "timezone"),
+  });
+
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { timezone: parsed.data.timezone },
+  });
+
+  redirect("/settings?saved=timezone");
+}
+
+/**
+ * Updates the signed-in user's name. Empty fields store null, so the avatar falls back
+ * to the email letter and My Watches does not show a broken greeting.
+ */
+export async function updateName(
+  _previousState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const user = await requireAppUser();
+
+  const parsed = UpdateNameSchema.safeParse({
+    firstName: field(formData, "firstName") ?? "",
+    lastName: field(formData, "lastName") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+    },
+  });
+
+  redirect("/settings?saved=name");
 }

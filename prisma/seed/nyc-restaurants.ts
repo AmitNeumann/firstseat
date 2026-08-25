@@ -59,6 +59,9 @@
  *    before is accepted without that check — there is nothing to check it against.
  *  • Re-running the seed updates existing rows in place rather than duplicating them, so
  *    you can add restaurants a few at a time.
+ *  • Photos live in `public/restaurants/` and are referenced as `imageUrl`, e.g.
+ *    `/restaurants/minetta-tavern.jpg`. Until the file is there, the catalog card falls
+ *    back to the striped placeholder.
  */
 
 // Every entry below is filled in, so the `TODO` sentinel is not currently imported.
@@ -73,6 +76,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "Minetta Tavern",
     city: "New York",
+    imageUrl: "/restaurants/minetta-tavern.jpg",
     releaseRule: {
       platform: "Resy",
       daysInAdvance: 30,
@@ -85,6 +89,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "Or'esh",
     city: "New York",
+    imageUrl: "/restaurants/oresh.jpg",
     releaseRule: {
       platform: "DoorDash",
       daysInAdvance: 7,
@@ -97,6 +102,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "L'Artusi",
     city: "New York",
+    imageUrl: "/restaurants/lartusi.jpg",
     releaseRule: {
       platform: "Resy",
       daysInAdvance: 14,
@@ -109,6 +115,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "The Four Horsemen",
     city: "New York",
+    imageUrl: "/restaurants/the-four-horsemen.jpg",
     releaseRule: {
       platform: "Resy",
       daysInAdvance: 30,
@@ -121,6 +128,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "Via Carota",
     city: "New York",
+    imageUrl: "/restaurants/via-carota.jpg",
     releaseRule: {
       platform: "Resy",
       daysInAdvance: 30,
@@ -133,6 +141,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "Soothr",
     city: "New York",
+    imageUrl: "/restaurants/soothr.jpg",
     releaseRule: {
       platform: "OpenTable",
       daysInAdvance: 30,
@@ -145,6 +154,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "Don Angie",
     city: "New York",
+    imageUrl: "/restaurants/don-angie.jpg",
     releaseRule: {
       platform: "OpenTable",
       daysInAdvance: 7,
@@ -157,6 +167,7 @@ export const nycRestaurants: RestaurantSeed[] = [
   {
     name: "Torrisi",
     city: "New York",
+    imageUrl: "/restaurants/torrisi.jpg",
     releaseRule: {
       platform: "Resy",
       daysInAdvance: 30,
