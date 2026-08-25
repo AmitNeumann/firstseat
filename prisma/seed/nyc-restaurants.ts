@@ -19,9 +19,10 @@
  *                      fits. Capitalisation and spaces do not matter — it is normalised
  *                      to a lowercase slug, so "SevenRooms" and "Seven Rooms" both become
  *                      "sevenrooms" and cannot end up recorded as two platforms.
- *  4. `daysInAdvance`— how far ahead the calendar lets you book. Resy usually states it
- *                      ("Reservations open 30 days in advance"). If it does not, find the
- *                      last date the calendar will accept and count the days from today.
+ *  4. `daysInAdvance`— how far ahead the calendar lets you book. Count from today to the
+ *                      last date the calendar will accept. Prefer that over the restaurant's
+ *                      copy when they disagree (a "30 days" page can still be a 29-day
+ *                      calendar).
  *  5. `releaseTime`  — the wall-clock time new dates appear, "HH:MM" on a 24-hour clock,
  *                      in New York time. Midnight is "00:00", 10am is "10:00".
  *  6. `source`       — where you saw it and the date you checked.
@@ -118,12 +119,13 @@ export const nycRestaurants: RestaurantSeed[] = [
     imageUrl: "/restaurants/the-four-horsemen.jpg",
     releaseRule: {
       platform: "Resy",
-      daysInAdvance: 30,
+      daysInAdvance: 29,
       releaseTime: "07:00",
       timezone: NYC,
       bookingUrl: "https://resy.com/cities/new-york-ny/venues/the-four-horsemen",
     },
-    source: "fourhorsemenbk.com/reservations + resy.com, checked 2026-08-23",
+    source:
+      "resy.com calendar open through 2026-09-23 on 2026-08-25 = 29 days (fourhorsemenbk.com/reservations still says 30); re-checked 2026-08-25",
   },
   {
     name: "Via Carota",

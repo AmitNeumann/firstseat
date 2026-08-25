@@ -37,9 +37,9 @@ export type DashboardAlert = {
 /**
  * One watch, with the drop moments computed for it.
  *
- * Presentational: the parent owns the ticking clock. Cancel still posts to the same
- * Server Action — the visual state (pending vs open) is decided from the clock, not
- * from a database status the scheduler has not written yet.
+ * Presentational: the parent owns the ticking clock. Delete still posts to cancelWatch
+ * — the visual state (pending vs open) is decided from the clock, not from a database
+ * status the scheduler has not written yet.
  */
 export function WatchCard({
   watch,
@@ -214,7 +214,7 @@ function WatchActions({ watchId }: { watchId: string }) {
           className="rounded-[10px] border border-honey-border bg-cream px-[18px] py-2.5
                      text-[13px] font-semibold text-muted hover:bg-warm-cream hover:text-soft"
         >
-          Cancel
+          Delete
         </button>
       </form>
     </div>
