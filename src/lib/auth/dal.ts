@@ -81,12 +81,14 @@ export async function ensureAppUser(
   }
 
   const timezone = readTimezone(authUser);
+  const firstName = readOptionalName(authUser.user_metadata?.firstName);
+  const lastName = readOptionalName(authUser.user_metadata?.lastName);
 
   // An upsert rather than a create: the first sign-in can fan out into several
   // concurrent requests, and each of them would see no row here.
   return prisma.user.upsert({
     where: { id: authUser.id },
-    create: { id: authUser.id, email, timezone },
+    create: { id: authUser.id, email, timezone, firstName, lastName },
     update: {},
     select,
   });
@@ -111,6 +113,20 @@ function readTimezone(authUser: SupabaseAuthUser): string {
   } catch {
     return DEFAULT_TIMEZONE;
   }
+}
+
+/**
+ * Names captured at signup, stored on the Supabase user so they survive email confirmation.
+ *
+ * `user_metadata` is user-controlled, so length is re-checked here rather than trusted.
+ */
+function readOptionalName(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 && trimmed.length <= 40 ? trimmed : null;
 }
 
 /** The signed-in user's `users` row, or `null` when nobody is signed in. */

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { RestaurantPhoto } from "@/components/restaurants/restaurant-photo";
 import {
   describeReleaseSchedule,
   restaurantLabel,
@@ -10,44 +9,49 @@ import {
 import { platformLabel } from "@/lib/watches/platforms";
 
 /**
- * One room on the catalog grid.
+ * One room on the catalog grid — typographic card, no photo.
  *
  * The whole card is the link: picking a restaurant is starting a watch for it. "Watch
  * this" is visual, not a second control, so a keyboard user tabs once per card.
+ *
+ * City is shown as the "NEW YORK" eyebrow. We do not invent neighborhoods; the schema
+ * only has city.
  */
 export function RestaurantCard({ restaurant }: { restaurant: RestaurantOption }) {
-  const platforms = [...new Set(restaurant.rules.map((rule) => platformLabel(rule.platform)))];
+  const platforms = [...new Set(restaurant.rules.map((rule) => rule.platform))];
 
   return (
     <Link
       href={watchCreationPath(restaurant.id)}
       aria-label={`Watch ${restaurantLabel(restaurant)}`}
-      className="group flex flex-col overflow-hidden rounded-[18px] border border-border bg-card
-                 shadow-card transition-[border-color] duration-150 hover:border-honey-border"
+      className="group flex flex-col gap-2.5 rounded-[18px] border border-border bg-card
+                 px-5 py-[18px] transition-[background-color,border-color,box-shadow] duration-150
+                 hover:border-[#E3D6BC] hover:bg-[#FFFDF8]
+                 hover:shadow-[0_20px_40px_-26px_rgba(90,45,24,0.45)]"
     >
-      <RestaurantPhoto imageUrl={restaurant.imageUrl ?? null} />
+      <div className="flex items-center justify-between gap-2.5 border-b border-border pb-[9px]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+          {restaurant.city}
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-clay">
+          {platforms.map(platformLabel).join(" · ")}
+        </span>
+      </div>
 
-      <div className="flex flex-1 flex-col gap-[7px] px-[18px] pt-4 pb-[18px]">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-serif text-[22px] font-medium tracking-[-0.015em] text-espresso">
-            {restaurant.name}
-          </h2>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
-            {platforms.join(" · ")}
-          </p>
-        </div>
+      <h2 className="font-serif text-[29px] font-light leading-[1.06] tracking-[-0.022em] text-espresso">
+        {restaurant.name}
+      </h2>
 
-        <p className="text-[13px] text-muted">{restaurant.city}</p>
-
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-border pt-3.5">
-          <p className="text-[12.5px] text-muted">{describeReleaseSchedule(restaurant.rules)}</p>
-          <span
-            className="rounded-lg bg-honey px-3 py-[7px] text-[13px] font-semibold
-                       text-clay-text group-hover:bg-apricot group-hover:text-[#5A2D18]"
-          >
-            Watch this
-          </span>
-        </div>
+      <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
+        <p className="font-serif text-base font-normal leading-snug text-[#3A322C]">
+          {describeReleaseSchedule(restaurant.rules)}
+        </p>
+        <span
+          className="self-start rounded-[10px] bg-clay px-4 py-2.5 text-[13px] font-semibold
+                     text-cream-on-clay group-hover:bg-clay-dark"
+        >
+          Watch this
+        </span>
       </div>
     </Link>
   );

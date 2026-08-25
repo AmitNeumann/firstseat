@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
 import { FormAlert } from "@/components/forms/fields";
-import { NameForm } from "@/components/settings/name-form";
+import { ProfileForm } from "@/components/settings/profile-form";
 import { SettingsCard } from "@/components/settings/settings-card";
-import { TimezoneForm } from "@/components/settings/timezone-form";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
 import { requireAppUser } from "@/lib/auth/dal";
@@ -42,47 +41,19 @@ export default async function SettingsPage({
           </p>
         </header>
 
-        <SettingsCard
-          title="Account"
-          description="The email you sign in with. It cannot be changed here."
-        >
-          <div className="space-y-1.5">
-            <p className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-              Email
-            </p>
-            <p
-              className="rounded-control border border-border bg-background px-3.5 py-3
-                         text-[15px] text-foreground"
-            >
-              {user.email}
-            </p>
-          </div>
-        </SettingsCard>
-
-        <SettingsCard
-          title="Name"
-          description="Used for your avatar initials and a greeting on My Watches."
-        >
-          {saved === "name" && (
+        <SettingsCard>
+          {saved && (
             <div className="mb-4">
-              <FormAlert tone="info">Saved. Your greeting and avatar will update.</FormAlert>
+              <FormAlert tone="info">Saved.</FormAlert>
             </div>
           )}
-          <NameForm firstName={user.firstName} lastName={user.lastName} />
-        </SettingsCard>
-
-        <SettingsCard
-          title="Timezone"
-          description={
-            <>This is the clock My Watches uses for &ldquo;your time&rdquo;.</>
-          }
-        >
-          {saved === "timezone" && (
-            <div className="mb-4">
-              <FormAlert tone="info">Saved. Drop times will show in this zone.</FormAlert>
-            </div>
-          )}
-          <TimezoneForm timezone={user.timezone} timezones={options} />
+          <ProfileForm
+            firstName={user.firstName}
+            lastName={user.lastName}
+            email={user.email}
+            timezone={user.timezone}
+            timezones={options}
+          />
         </SettingsCard>
       </main>
 

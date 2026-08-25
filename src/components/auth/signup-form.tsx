@@ -4,7 +4,7 @@ import { useActionState, useSyncExternalStore } from "react";
 
 import { signup } from "@/lib/auth/actions";
 import { Field } from "@/components/auth/form-fields";
-import { FormAlert, SubmitButton } from "@/components/forms/fields";
+import { FormAlert, SubmitButton, TextField } from "@/components/forms/fields";
 import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
 
 export function SignupForm() {
@@ -36,6 +36,27 @@ export function SignupForm() {
   return (
     <form action={submit} className="flex flex-col gap-3.5">
       {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
+
+      <div className="grid gap-3.5 sm:grid-cols-2">
+        <TextField
+          label="First name"
+          name="firstName"
+          defaultValue={state?.firstName ?? ""}
+          autoComplete="given-name"
+          placeholder="Amit"
+          errors={state?.errors?.firstName}
+          maxLength={40}
+        />
+        <TextField
+          label="Last name"
+          name="lastName"
+          defaultValue={state?.lastName ?? ""}
+          autoComplete="family-name"
+          placeholder="Neumann"
+          errors={state?.errors?.lastName}
+          maxLength={40}
+        />
+      </div>
 
       <Field
         label="Email"

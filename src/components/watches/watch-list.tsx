@@ -40,7 +40,9 @@ export function WatchList({
     <>
       <div className="flex flex-col gap-2">
         {greeting && (
-          <p className="text-sm font-medium text-soft">Hi {greeting} 👋</p>
+          <p className="font-serif text-[clamp(28px,5.4vw,36px)] font-normal tracking-[-0.02em] text-espresso">
+            Hi {greeting}!
+          </p>
         )}
         <h1 className="font-serif text-[clamp(28px,5.4vw,36px)] font-normal tracking-[-0.02em] text-espresso">
           My Watches

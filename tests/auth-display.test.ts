@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { avatarInitials, greetingFirstName } from "@/lib/auth/display";
-import { UpdateNameSchema } from "@/lib/auth/schemas";
+import { SignupSchema, UpdateNameSchema } from "@/lib/auth/schemas";
 
 describe("avatarInitials", () => {
   it("uses first and last initials when both names are set", () => {
@@ -72,5 +72,37 @@ describe("UpdateNameSchema", () => {
     });
 
     expect(parsed.success).toBe(false);
+  });
+});
+
+describe("SignupSchema names", () => {
+  const base = {
+    email: "amit@example.com",
+    password: "longenough",
+    timezone: "Asia/Jerusalem",
+  };
+
+  it("accepts a first and last name", () => {
+    const parsed = SignupSchema.safeParse({
+      ...base,
+      firstName: " Amit ",
+      lastName: "Neumann",
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.firstName).toBe("Amit");
+    expect(parsed.success && parsed.data.lastName).toBe("Neumann");
+  });
+
+  it("stores missing names as null so greeting and initials can fall back", () => {
+    const parsed = SignupSchema.safeParse({
+      ...base,
+      firstName: "",
+      lastName: "  ",
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.firstName).toBeNull();
+    expect(parsed.success && parsed.data.lastName).toBeNull();
   });
 });

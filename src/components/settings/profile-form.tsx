@@ -2,21 +2,27 @@
 
 import { useActionState } from "react";
 
-import { FormAlert, SubmitButton, TextField } from "@/components/forms/fields";
-import { updateName } from "@/lib/auth/actions";
+import { FormAlert, SelectField, SubmitButton, TextField } from "@/components/forms/fields";
+import { updateSettings } from "@/lib/auth/actions";
 
 /**
- * First and last name. Empty fields store null, so the avatar falls back to the email
- * letter and My Watches does not greet a blank name.
+ * The one Settings card: names, the sign-in email (read-only), and timezone.
  */
-export function NameForm({
+export function ProfileForm({
   firstName,
   lastName,
+  email,
+  timezone,
+  timezones,
 }: {
   firstName: string | null;
   lastName: string | null;
+  email: string;
+  timezone: string;
+  timezones: string[];
 }) {
-  const [state, action, pending] = useActionState(updateName, undefined);
+  const [state, action, pending] = useActionState(updateSettings, undefined);
+  const options = timezones.map((zone) => ({ value: zone, label: zone }));
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -44,8 +50,28 @@ export function NameForm({
         />
       </div>
 
+      <div className="space-y-1.5">
+        <p className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+          Email
+        </p>
+        <p
+          className="rounded-control border border-border bg-background px-3.5 py-3
+                     text-[15px] text-foreground"
+        >
+          {email}
+        </p>
+      </div>
+
+      <SelectField
+        label="Timezone"
+        name="timezone"
+        options={options}
+        defaultValue={timezone}
+        errors={state?.errors?.timezone}
+      />
+
       <SubmitButton pending={pending} pendingLabel="Saving…">
-        Save name
+        Save
       </SubmitButton>
     </form>
   );

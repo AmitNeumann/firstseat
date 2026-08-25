@@ -7,8 +7,7 @@ import { ensureAppUser, requireAppUser } from "@/lib/auth/dal";
 import {
   LoginSchema,
   SignupSchema,
-  UpdateNameSchema,
-  UpdateTimezoneSchema,
+  UpdateSettingsSchema,
   type AuthFormState,
   type SettingsFormState,
 } from "@/lib/auth/schemas";
@@ -22,21 +21,27 @@ export async function signup(
   formData: FormData,
 ): Promise<AuthFormState> {
   const submittedEmail = field(formData, "email") ?? "";
+  const submittedFirstName = field(formData, "firstName") ?? "";
+  const submittedLastName = field(formData, "lastName") ?? "";
 
   const parsed = SignupSchema.safeParse({
     email: field(formData, "email"),
     password: field(formData, "password"),
     timezone: field(formData, "timezone"),
+    firstName: submittedFirstName,
+    lastName: submittedLastName,
   });
 
   if (!parsed.success) {
     return {
       errors: z.flattenError(parsed.error).fieldErrors,
       email: submittedEmail,
+      firstName: submittedFirstName,
+      lastName: submittedLastName,
     };
   }
 
-  const { email, password, timezone } = parsed.data;
+  const { email, password, timezone, firstName, lastName } = parsed.data;
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signUp({
@@ -45,13 +50,18 @@ export async function signup(
     options: {
       // Read back by `ensureAppUser` when the `users` row is created, which may not be
       // until the confirmation link is followed.
-      data: { timezone },
+      data: { timezone, firstName, lastName },
       emailRedirectTo: `${await getSiteOrigin()}/auth/confirm`,
     },
   });
 
   if (error) {
-    return { message: error.message, email };
+    return {
+      message: error.message,
+      email,
+      firstName: submittedFirstName,
+      lastName: submittedLastName,
+    };
   }
 
   if (data.session && data.user) {
@@ -130,44 +140,18 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Updates the signed-in user's timezone. Scoped by `user.id` from `requireAppUser()` —
- * Prisma bypasses RLS, so that `where` is the authorization.
+ * Saves name and timezone together from the single Settings card. Scoped by `user.id`.
  */
-export async function updateTimezone(
+export async function updateSettings(
   _previousState: SettingsFormState,
   formData: FormData,
 ): Promise<SettingsFormState> {
   const user = await requireAppUser();
 
-  const parsed = UpdateTimezoneSchema.safeParse({
-    timezone: field(formData, "timezone"),
-  });
-
-  if (!parsed.success) {
-    return { errors: z.flattenError(parsed.error).fieldErrors };
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { timezone: parsed.data.timezone },
-  });
-
-  redirect("/settings?saved=timezone");
-}
-
-/**
- * Updates the signed-in user's name. Empty fields store null, so the avatar falls back
- * to the email letter and My Watches does not show a broken greeting.
- */
-export async function updateName(
-  _previousState: SettingsFormState,
-  formData: FormData,
-): Promise<SettingsFormState> {
-  const user = await requireAppUser();
-
-  const parsed = UpdateNameSchema.safeParse({
+  const parsed = UpdateSettingsSchema.safeParse({
     firstName: field(formData, "firstName") ?? "",
     lastName: field(formData, "lastName") ?? "",
+    timezone: field(formData, "timezone"),
   });
 
   if (!parsed.success) {
@@ -179,8 +163,9 @@ export async function updateName(
     data: {
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
+      timezone: parsed.data.timezone,
     },
   });
 
-  redirect("/settings?saved=name");
+  redirect("/settings?saved=1");
 }

@@ -20,6 +20,12 @@ const timezoneField = z
   .or(z.literal("").transform(() => DEFAULT_TIMEZONE))
   .default(DEFAULT_TIMEZONE);
 
+const optionalName = z
+  .string()
+  .trim()
+  .max(40, { error: "Use 40 characters or fewer." })
+  .transform((value) => (value.length === 0 ? null : value));
+
 export const SignupSchema = z.object({
   email: emailField,
   password: z
@@ -30,6 +36,8 @@ export const SignupSchema = z.object({
     // actually checked at sign-in.
     .max(72, { error: "Use 72 characters or fewer." }),
   timezone: timezoneField,
+  firstName: optionalName,
+  lastName: optionalName,
 });
 
 /**
@@ -50,15 +58,16 @@ export const UpdateTimezoneSchema = z.object({
     .refine(isKnownTimezone, { error: "Unrecognised timezone." }),
 });
 
-const optionalName = z
-  .string()
-  .trim()
-  .max(40, { error: "Use 40 characters or fewer." })
-  .transform((value) => (value.length === 0 ? null : value));
-
 export const UpdateNameSchema = z.object({
   firstName: optionalName,
   lastName: optionalName,
+});
+
+export const UpdateSettingsSchema = UpdateNameSchema.extend({
+  timezone: z
+    .string()
+    .trim()
+    .refine(isKnownTimezone, { error: "Unrecognised timezone." }),
 });
 
 export type SettingsFormState =
@@ -80,6 +89,8 @@ export type AuthFormState =
         email?: string[];
         password?: string[];
         timezone?: string[];
+        firstName?: string[];
+        lastName?: string[];
       };
       /** A whole-form failure, e.g. rejected credentials. */
       message?: string;
@@ -87,5 +98,7 @@ export type AuthFormState =
       notice?: string;
       /** Echoed back so a failed submit does not clear what the user typed. */
       email?: string;
+      firstName?: string;
+      lastName?: string;
     }
   | undefined;
