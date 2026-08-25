@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AuthFrame } from "@/components/auth/auth-frame";
@@ -28,6 +29,19 @@ export default async function SignupPage() {
       formTitle="Create your account"
       swapHref="/login"
       swapLabel="Already have an account? Sign in"
+      belowForm={
+        <div className="text-[12px] leading-snug text-muted [text-wrap:wrap]">
+          By continuing, you agree to our{" "}
+          <Link href="/terms" className="font-medium text-clay hover:text-clay-dark">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="font-medium text-clay hover:text-clay-dark">
+            Privacy Policy
+          </Link>
+          .
+        </div>
+      }
     >
       <SignupForm />
     </AuthFrame>

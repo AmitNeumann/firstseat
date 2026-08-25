@@ -15,6 +15,7 @@ export function AuthFrame({
   formTitle,
   swapHref,
   swapLabel,
+  belowForm,
   children,
 }: {
   eyebrow: string;
@@ -24,6 +25,8 @@ export function AuthFrame({
   formTitle: string;
   swapHref: string;
   swapLabel: string;
+  /** Optional copy that sits between the form and the sign-in/sign-up swap link. */
+  belowForm?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -54,7 +57,10 @@ export function AuthFrame({
         <h2 className="font-serif text-2xl font-medium tracking-[-0.02em] text-espresso">
           {formTitle}
         </h2>
-        {children}
+        <div className="flex flex-col gap-2">
+          {children}
+          {belowForm}
+        </div>
         <Link
           href={swapHref}
           className="self-start rounded-lg px-1 py-1 text-[13px] font-semibold text-clay-text hover:bg-honey-light"
