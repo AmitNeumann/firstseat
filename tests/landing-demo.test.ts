@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Meal } from "@/generated/prisma/enums";
-import { formatCountdown } from "@/lib/watches/format";
+import { formatCountdown, isDropOpen } from "@/lib/watches/format";
 import { parseLandingDemo } from "@/lib/watches/landing-demo";
 import type { RestaurantOption } from "@/lib/watches/options";
 
@@ -83,5 +83,23 @@ describe("formatCountdown", () => {
   it("reads OPEN at or after the drop", () => {
     expect(formatCountdown(0)).toBe("OPEN");
     expect(formatCountdown(-1_000)).toBe("OPEN");
+  });
+});
+
+describe("isDropOpen", () => {
+  const now = Date.parse("2026-08-25T12:00:00.000Z");
+
+  it("is false before the drop", () => {
+    expect(isDropOpen(now + 1_000, now)).toBe(false);
+  });
+
+  it("is true at the drop and for the next 30 minutes", () => {
+    expect(isDropOpen(now, now)).toBe(true);
+    expect(isDropOpen(now - 30 * 60_000 + 1, now)).toBe(true);
+  });
+
+  it("is false once more than 30 minutes have passed", () => {
+    expect(isDropOpen(now - 30 * 60_000, now)).toBe(false);
+    expect(isDropOpen(now - 31 * 60_000, now)).toBe(false);
   });
 });

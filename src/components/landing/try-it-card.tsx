@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import { LandingPreviewCard } from "@/components/landing/preview-card";
+import { useTickingNow } from "@/components/watches/use-ticking-now";
 import { Meal } from "@/generated/prisma/enums";
 import { addDays, civilDateInZone, formatCivilDate } from "@/lib/time";
 import { computeDropMoment } from "@/lib/watches/drop-time";
@@ -118,32 +119,6 @@ export function LandingTryIt({ restaurant }: { restaurant: RestaurantOption | nu
         {shown ? "Alert me before this drops" : "Show me the drop time"}
       </button>
     </div>
-  );
-}
-
-/**
- * A one-second clock that only ticks while the preview is on screen.
- *
- * Snapshot is the current second (not `Date.now()` itself) so React can tell that
- * nothing changed between renders inside the same second.
- */
-function useTickingNow(enabled: boolean): number {
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      if (!enabled) {
-        return () => {};
-      }
-
-      const id = window.setInterval(onChange, 1000);
-      return () => window.clearInterval(id);
-    },
-    [enabled],
-  );
-
-  return useSyncExternalStore(
-    subscribe,
-    () => Math.floor(Date.now() / 1000) * 1000,
-    () => 0,
   );
 }
 

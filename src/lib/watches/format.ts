@@ -73,6 +73,21 @@ export function formatShortDate(value: string): string {
 }
 
 /**
+ * How long the espresso "window is open" card stays up after the drop.
+ *
+ * Thirty minutes is a display rule, not a database status: the scheduler that would mark
+ * an alert SENT does not exist yet, so the card decides from the clock. After this window
+ * the watch returns to the pending card, with the countdown reading OPEN.
+ */
+export const OPEN_WINDOW_MS = 30 * 60 * 1000;
+
+/** True while `now` is at or after the drop, but not more than 30 minutes past it. */
+export function isDropOpen(dropAtMs: number, nowMs: number): boolean {
+  const remaining = dropAtMs - nowMs;
+  return remaining <= 0 && remaining > -OPEN_WINDOW_MS;
+}
+
+/**
  * How long until a drop, as the interface prints it.
  *
  * Days hide the seconds; under an hour the seconds become the ticking part. Zero or
