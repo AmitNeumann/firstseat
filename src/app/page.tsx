@@ -39,30 +39,36 @@ export default async function Home() {
 
         <section className="mt-[clamp(26px,6vw,52px)] grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] gap-3.5">
           <article className="rounded-panel border border-border bg-card p-[22px] text-left">
-            <FeatureIcon name="table" className="mb-3 size-7 text-clay" />
-            <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
-              Tell us the table
-            </h2>
+            <div className="flex items-center gap-3">
+              <FeatureIcon name="table" className="size-7 shrink-0 text-clay" />
+              <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
+                Tell us the table
+              </h2>
+            </div>
             <p className="mt-2 text-[13.5px] text-muted">
               A sentence is enough. We resolve the restaurant, date, meal and party.
             </p>
           </article>
 
           <article className="rounded-panel border border-honey-border bg-honey-light p-[22px] text-left">
-            <FeatureIcon name="math" className="mb-3 size-7 text-honey-muted" />
-            <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
-              We do the math
-            </h2>
+            <div className="flex items-center gap-3">
+              <FeatureIcon name="math" className="size-7 shrink-0 text-honey-muted" />
+              <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
+                We do the math
+              </h2>
+            </div>
             <p className="mt-2 text-[13.5px] text-honey-muted">
               Each room&apos;s release rule, converted to New York time and yours.
             </p>
           </article>
 
           <article className="rounded-panel border border-[#E8CFA0] bg-honey p-[22px] text-left">
-            <FeatureIcon name="reveal" className="mb-3 size-7 text-clay-text" />
-            <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-clay-text">
-              The reveal
-            </h2>
+            <div className="flex items-center gap-3">
+              <FeatureIcon name="reveal" className="size-7 shrink-0 text-clay-text" />
+              <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-clay-text">
+                The reveal
+              </h2>
+            </div>
             <p className="mt-2 text-[13.5px] text-[#8A5A2E]">
               Minutes before the drop, your phone buzzes with the link.
             </p>

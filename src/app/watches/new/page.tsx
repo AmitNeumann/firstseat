@@ -36,23 +36,23 @@ export default async function NewWatchPage({
   const today = civilDateInZone(new Date(), user.timezone);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-10">
-      <header className="space-y-1">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-10">
+      <header>
         <Link
           href="/dashboard"
           className="text-sm text-muted transition-opacity hover:opacity-70"
         >
           ← Your watches
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Watch a table</h1>
-        <p className="text-sm text-muted">
+        <h1 className="mt-6 text-xl font-semibold tracking-tight">Watch a table</h1>
+        <p className="mt-1 text-sm text-muted">
           Tell us the table you want. We know when each restaurant releases its bookings,
           so we can tell you the exact moment to be ready.
         </p>
       </header>
 
       {restaurants.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <section className="mt-3 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
           <p className="text-sm text-muted">
             No restaurants yet. Release rules are entered by hand in{" "}
             <code className="font-mono text-xs">prisma/seed/nyc-restaurants.ts</code> and
@@ -60,7 +60,7 @@ export default async function NewWatchPage({
           </p>
         </section>
       ) : (
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section className="mt-3 rounded-2xl border border-border bg-card p-6">
           <CreateWatchForm
             restaurants={restaurants}
             earliestDate={formatCivilDate(today)}

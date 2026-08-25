@@ -140,6 +140,33 @@ export function filterCatalog(
   );
 }
 
+/**
+ * What the catalog *grid* shows. The search box's live text is not this — typing only
+ * drives suggestions until Enter or a pick commits a selection.
+ */
+export type CatalogSelection =
+  | { kind: "all" }
+  | { kind: "restaurant"; id: string }
+  | { kind: "query"; query: string };
+
+export function catalogCards(
+  restaurants: RestaurantOption[],
+  selection: CatalogSelection,
+  filter: CatalogFilterId,
+): RestaurantOption[] {
+  if (selection.kind === "restaurant") {
+    return filterCatalog(restaurants, "", filter).filter(
+      (restaurant) => restaurant.id === selection.id,
+    );
+  }
+
+  if (selection.kind === "query") {
+    return filterCatalog(restaurants, selection.query, filter);
+  }
+
+  return filterCatalog(restaurants, "", filter);
+}
+
 export function matchesCatalogFilter(
   restaurant: RestaurantOption,
   filter: CatalogFilterId,

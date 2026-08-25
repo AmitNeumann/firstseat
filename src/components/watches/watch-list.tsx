@@ -38,14 +38,9 @@ export function WatchList({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        {greeting && (
-          <p className="font-serif text-[clamp(28px,5.4vw,36px)] font-normal tracking-[-0.02em] text-espresso">
-            Hi {greeting}!
-          </p>
-        )}
-        <h1 className="font-serif text-[clamp(28px,5.4vw,36px)] font-normal tracking-[-0.02em] text-espresso">
-          My Watches
+      <div className="flex flex-col gap-1">
+        <h1 className="font-serif text-[clamp(28px,5.4vw,36px)] font-normal leading-[1.1] tracking-[-0.02em] text-espresso">
+          {greeting ? `Hi ${greeting}! Your Watches` : "My Watches"}
         </h1>
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <p className="text-sm text-muted">

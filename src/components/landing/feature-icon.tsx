@@ -1,5 +1,5 @@
 /**
- * Small marks above the three landing feature cards.
+ * Small marks beside the three landing feature-card titles (icon left, title next).
  *
  * Decorative only — each card already has a heading — so they are hidden from
  * assistive tech. Colours follow the card they sit on: clay on white, honey-muted

@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  catalogCards,
   catalogPills,
   describeReleaseSchedule,
   filterCatalog,
@@ -211,6 +212,31 @@ describe("filterCatalog", () => {
       "Via Carota",
     ]);
     expect(filterCatalog(rooms, "via", "midnight")).toEqual([]);
+  });
+});
+
+describe("catalogCards", () => {
+  const rooms = [
+    restaurant("Minetta Tavern"),
+    restaurant("Don Angie"),
+    restaurant("Via Carota"),
+  ];
+
+  it("keeps the full chip-filtered list until a selection is committed", () => {
+    expect(filterCatalog(rooms, "d", "all").map((entry) => entry.name)).toEqual(["Don Angie"]);
+    expect(catalogCards(rooms, { kind: "all" }, "all").map((entry) => entry.name)).toEqual([
+      "Minetta Tavern",
+      "Don Angie",
+      "Via Carota",
+    ]);
+  });
+
+  it("shows one restaurant after a pick", () => {
+    expect(
+      catalogCards(rooms, { kind: "restaurant", id: "Don Angie" }, "all").map(
+        (entry) => entry.name,
+      ),
+    ).toEqual(["Don Angie"]);
   });
 });
 
