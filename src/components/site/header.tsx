@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { AccountMenu } from "@/components/site/account-menu";
 import { Logo } from "@/components/site/logo";
-import { avatarInitials } from "@/lib/auth/display";
+import { avatarInitials, displayFullName } from "@/lib/auth/display";
 
 /**
  * Sticky chrome shared by every view.
@@ -48,6 +48,7 @@ export function SiteHeader({
           <AccountMenu
             email={user?.email ?? ""}
             initials={user ? avatarInitials(user) : "?"}
+            displayName={user ? displayFullName(user) : null}
           />
         ) : (
           <>

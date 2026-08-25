@@ -8,14 +8,18 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 /**
  * Signed-in account control: initials avatar that opens Settings and Sign out.
  *
- * Sign out stays a POST form (same as before) so a prefetch cannot log people out.
+ * The menu shows the full name (when set) with the email underneath; otherwise the
+ * email line as before. Sign out stays a POST form so a prefetch cannot log people out.
  */
 export function AccountMenu({
   email,
   initials,
+  displayName,
 }: {
   email: string;
   initials: string;
+  /** Full name when set; the menu falls back to the email line when this is null. */
+  displayName: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -44,13 +48,23 @@ export function AccountMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-[12px]
+          className="absolute right-0 z-30 mt-2 min-w-56 overflow-hidden rounded-[12px]
                      border border-border bg-card py-1 shadow-menu"
         >
-          <p className="truncate px-3.5 py-2 text-[11px] font-semibold uppercase
-                        tracking-[0.14em] text-muted">
-            {email}
-          </p>
+          <div className="border-b border-border px-3.5 py-2">
+            {displayName ? (
+              <>
+                <div className="truncate text-[13.5px] font-semibold text-espresso">
+                  {displayName}
+                </div>
+                <div className="truncate text-[11px] text-muted">{email}</div>
+              </>
+            ) : (
+              <div className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+                {email}
+              </div>
+            )}
+          </div>
           <Link
             href="/settings"
             role="menuitem"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { avatarInitials, greetingFirstName } from "@/lib/auth/display";
+import { avatarInitials, displayFullName, greetingFirstName } from "@/lib/auth/display";
 import { SignupSchema, UpdateNameSchema } from "@/lib/auth/schemas";
 
 describe("avatarInitials", () => {
@@ -44,6 +44,22 @@ describe("greetingFirstName", () => {
     expect(greetingFirstName(null)).toBeNull();
     expect(greetingFirstName("")).toBeNull();
     expect(greetingFirstName("   ")).toBeNull();
+  });
+});
+
+describe("displayFullName", () => {
+  it("joins first and last name", () => {
+    expect(displayFullName({ firstName: "Amit", lastName: "Neumann" })).toBe("Amit Neumann");
+  });
+
+  it("uses whichever name is set", () => {
+    expect(displayFullName({ firstName: "Amit", lastName: null })).toBe("Amit");
+    expect(displayFullName({ firstName: null, lastName: "Neumann" })).toBe("Neumann");
+  });
+
+  it("returns null when no name is set, so the menu can show only the email", () => {
+    expect(displayFullName({ firstName: null, lastName: null })).toBeNull();
+    expect(displayFullName({ firstName: "  ", lastName: "" })).toBeNull();
   });
 });
 

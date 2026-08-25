@@ -39,6 +39,21 @@ export function greetingFirstName(firstName: string | null): string | null {
   return trimmed ? trimmed : null;
 }
 
+/**
+ * "Amit Neumann" for the account menu. Null when neither name is set, so the menu
+ * can fall back to the email line it already showed.
+ */
+export function displayFullName({
+  firstName,
+  lastName,
+}: Pick<NameParts, "firstName" | "lastName">): string | null {
+  const parts = [firstName, lastName]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
 function initial(value: string | null): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed.charAt(0).toUpperCase() : null;
