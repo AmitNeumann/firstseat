@@ -23,7 +23,7 @@ zero prior context. Read it top to bottom before making changes.
 
 ### What's left, in this order
 
-1. **Send the alert emails** (Resend + Vercel cron) — the core product gap. `drop_alerts` are computed and stored; nothing is sent. **Vercel cron only runs in production**, so full auto-sending needs the app deployed (`main`), not just a preview. See §5.
+1. **Send the alert emails** (next) — Resend + Vercel cron. `RESEND_API_KEY` is already in `.env.local` (server-only, git-ignored). Timing math exists (`computeDropMoment` / `alertAt`); delivery does not. See §5 for the plan. **Vercel cron only runs in production**, so the auto loop needs a deploy, but the send function must be testable locally via a manual trigger.
 2. **Merge `feat/watches` to `main`** — only after (a) the four database/auth env vars are on Vercel and (b) Supabase redirect URLs are set. Merging deploys. Add `GEMINI_API_KEY` on Vercel too if the production create-watch parse should work. Do **not** push `main` until then.
 3. **The six required documents + the presentation** (§8): product spec, technical design, test spec, scale, security, architecture; then the 10–15 min presentation. `README.md` local-run rewrite sits with these.
 
@@ -107,7 +107,7 @@ from manually tracking release schedules across several booking platforms.
 | Testing | Vitest 4.1.11 | ✅ 199 unit tests passing (9 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
-| Alert delivery | `drop_alerts` stored, nothing sent | 🔜 **top remaining product gap**, Resend + Vercel cron, see §5 |
+| Alert delivery | `drop_alerts` stored, nothing sent | 🔜 **next task.** `RESEND_API_KEY` is in `.env.local` (server-only, git-ignored). Plan in §5 |
 | AI parse endpoint | Gemini (`GEMINI_API_KEY`, server-only) | ✅ create-watch Describe it only. Landing Try it is a **local** Minetta parser (no Gemini) |
 
 There is deliberately **no** UI component library, form library, date library or timezone
@@ -266,7 +266,7 @@ firstseat/
 ├── HANDOVER.md              ← this file
 ├── README.md                ← still the default create-next-app readme (TODO: rewrite)
 ├── AGENTS.md / CLAUDE.md    ← auto-generated AI tool instructions, re-added by `next dev`
-├── .env.example             ← documents required env vars including GEMINI_API_KEY (placeholders only, committed)
+├── .env.example             ← documents required env vars including GEMINI_API_KEY and RESEND_API_KEY (placeholders only, committed)
 ├── .env.local               ← REAL SECRETS, git-ignored, never commit
 ├── .gitignore               ← ignores .env* but re-includes !.env.example
 ├── package.json             ← build script is `prisma generate && next build`
@@ -778,29 +778,40 @@ Guidance that still applies:
 - **Do not break the accessibility already in the combobox** — ARIA combobox with keyboard
   navigation. Restyle it; do not rewrite it casually.
 
-### 🔴 Next: send the alert emails (top remaining product feature)
+### 🔴 Next: send the alert emails (the next task)
 
-**This is the top priority.** The largest functional gap, and worth being honest about
-in the presentation: **nothing sends anything yet.** `drop_alerts` rows are computed
-and stored with the right instants (`alertAt` = drop minus
-`DEFAULT_ALERT_LEAD_MINUTES`, which is **5**), and the `(status, alertAt)` index exists
-precisely to serve "which alerts are due now?", but no scheduler reads it and the
-`notifications` table is never written to.
+**This is the top priority.** Nothing sends anything yet. `drop_alerts` rows are computed
+and stored with the right instants (`alertAt` = drop minus `DEFAULT_ALERT_LEAD_MINUTES`,
+which is **5**), and the `(status, alertAt)` index exists to serve "which alerts are due
+now?", but no scheduler reads it and the `notifications` table is never written to.
 
-**Shape to build:** a **Vercel cron** job hits a protected route handler, finds alerts
-that are due, **sends the email ~5 minutes before the drop via Resend**, and **marks
-them sent** so they cannot double-fire. The timing math already exists; this is
-delivery. Email is the channel to build first (`NotificationChannel.EMAIL` already
-exists). The Resend API key is **server-only** — never `NEXT_PUBLIC_`. Add it to
-`.env.example` as a placeholder and to Vercel.
+`RESEND_API_KEY` is **already in `.env.local`** (as of 26 August 2026), server-side only,
+git-ignored — same pattern as `GEMINI_API_KEY`. **Never `NEXT_PUBLIC_`. Never commit
+`.env.local`.** A placeholder belongs in `.env.example`; the real key stays out of git
+and out of chat.
 
-**Vercel cron only runs in production** (not on preview deployments, not on `localhost`).
-Full auto-sending therefore needs `feat/watches` merged to `main` with env vars set.
-Until then, the handler can still be built and hit manually.
+**Plan:**
 
-Note the honest constraint for the demo: cron on the Vercel free plan runs at most
-daily, which is far too coarse for a to-the-minute alert. Say so rather than implying
-it works — a clear account of the limitation is worth more marks than a vague claim.
+1. Use Resend to send the alert email **~5 minutes before each drop**. From address for
+   now: Resend's test domain, **`onboarding@resend.dev`**.
+2. A **Vercel cron** job runs periodically (target: every minute), finds `drop_alerts`
+   whose `alertAt` has passed and that have not been sent, sends via Resend, and **marks
+   them sent** so they cannot double-fire.
+3. Do **not** recompute drop times in the mailer. `computeDropMoment` / `alertAt` are
+   already the source of truth; this feature is delivery only.
+4. **Vercel cron only runs in production** (not preview, not `localhost`). The full
+   auto-sending loop therefore needs the app deployed on `main`. The **send function
+   itself must be testable locally** — a protected manual trigger / endpoint — so we can
+   confirm an email actually arrives before relying on cron.
+5. `RESEND_API_KEY` is server-only. Add the same var on Vercel before production cron
+   can send.
+
+Email is the channel to build first (`NotificationChannel.EMAIL` already exists).
+
+Note the honest constraint for the demo: cron on the Vercel **free** plan runs at most
+daily, which is far too coarse for a to-the-minute alert. The plan still aims at a
+minute-level job; if the project stays on Hobby, say so in the presentation rather than
+implying minute cron works.
 
 ### ✅ Built: the AI natural-language parse endpoint (complete)
 
@@ -915,8 +926,8 @@ in browser code.
 **🔴 `NEXT_PUBLIC_` means "public".** The prefix is what tells Next.js to inline the value into
 the JavaScript sent to the browser, where anyone can read it. That is fine for the Supabase
 anon key, which is designed for it. It is **not** fine for anything billable or privileged —
-`GEMINI_API_KEY` is a plain server-only variable (never `NEXT_PUBLIC_`), and the Supabase
-`service_role` key must never appear in one either.
+`GEMINI_API_KEY` and `RESEND_API_KEY` are plain server-only variables (never `NEXT_PUBLIC_`),
+and the Supabase `service_role` key must never appear in one either.
 
 **🟠 The generated Prisma client is git-ignored.** It lives in `src/generated/prisma`. After
 cloning, or after any schema change, run `npx prisma generate`. Vercel handles this via the
@@ -1018,9 +1029,9 @@ npm run dev                  # http://localhost:3000
 
 ### Required environment variables
 
-All four database/auth vars plus `GEMINI_API_KEY` live in `.env.local`, which is git-ignored.
-`.env.example` documents them with placeholders. **Never commit real values; never paste
-them into a chat.**
+All four database/auth vars plus `GEMINI_API_KEY` and `RESEND_API_KEY` live in `.env.local`,
+which is git-ignored. `.env.example` documents them with placeholders. **Never commit real
+values; never paste them into a chat. `.env.local` must never be committed.**
 
 | Variable | Where to get it | Used by |
 | --- | --- | --- |
@@ -1029,13 +1040,14 @@ them into a chat.**
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Supabase Auth |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page (anon / publishable key) | Supabase Auth |
 | `GEMINI_API_KEY` | Google AI Studio → API keys | Create-watch parse route (server-only) |
+| `RESEND_API_KEY` | Resend → API Keys | Alert emails (server-only). **Already in local `.env.local` as of 26 Aug 2026.** |
 
 `.env.example` also documents one optional variable, `NEXT_PUBLIC_SITE_URL`, commented out.
 It is normally unnecessary: the signup action reads the request's `Origin` header, which is
 already correct on localhost, previews and production alike.
 
-Add `GEMINI_API_KEY` to Vercel before a preview that should parse. Sending alerts may add
-a Resend-style secret the same way: server-only, never `NEXT_PUBLIC_`.
+Add `GEMINI_API_KEY` and `RESEND_API_KEY` to Vercel before production parse / email sending.
+Both are server-only, never `NEXT_PUBLIC_`.
 
 The anon/publishable key is safe to expose to the browser by design. The **`service_role`
 key must never** be used in a `NEXT_PUBLIC_` variable — it bypasses RLS. It is not needed today.
@@ -1123,7 +1135,8 @@ git check-ignore -v .env.local        # confirm secrets stay ignored
 - **Verify, don't trust.** Confirm the database with introspection, deployments with HTTP
   requests, and pushes by comparing local and remote commit hashes.
 - **Never put secrets in chat or in git.** Check `git diff --cached` before every commit.
-  Only `.env.example` is tracked; `.env.local` is gitignored.
+  Only `.env.example` is tracked; `.env.local` is gitignored and **must never be committed**.
+  `GEMINI_API_KEY` and `RESEND_API_KEY` are server-only — never `NEXT_PUBLIC_`.
 - **Do not merge or push `main`.** Vercel deploys `main`. Local `main` is one commit ahead
   of `origin/main` and must stay unpushed until the four env vars are on Vercel (§0).
   Work stays on `feat/watches`.
