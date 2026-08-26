@@ -11,6 +11,7 @@ import { computeDropMoment } from "@/lib/watches/drop-time";
 import {
   LANDING_DEMO_PLACEHOLDER,
   parseLandingDemo,
+  type LandingDemoParse,
 } from "@/lib/watches/landing-demo";
 import type { RestaurantOption } from "@/lib/watches/options";
 
@@ -19,24 +20,26 @@ import type { RestaurantOption } from "@/lib/watches/options";
  *
  * First press reveals a drop preview for Minetta Tavern, computed with the same
  * `computeDropMoment` the server uses to schedule real alerts. Second press goes to
- * sign-up — we do not create a watch yet, and we never send the rest of the catalog.
+ * sign-up — we do not create a watch yet, and we never send the rest of the catalog
+ * or call Gemini.
  */
 export function LandingTryIt({ restaurant }: { restaurant: RestaurantOption | null }) {
   const router = useRouter();
   const [sentence, setSentence] = useState("");
-  const [shown, setShown] = useState(false);
+  const [parsed, setParsed] = useState<LandingDemoParse | null>(null);
   const [miss, setMiss] = useState(false);
   const [userZone, setUserZone] = useState("Europe/London");
+  const shown = parsed?.matched === true;
   const now = useTickingNow(shown);
 
   const preview =
-    restaurant && shown
-      ? buildPreview(restaurant, sentence, userZone, now)
+    restaurant && parsed?.matched
+      ? buildPreview(restaurant, parsed, userZone, now)
       : null;
 
   function handleSentenceChange(value: string) {
     setSentence(value);
-    setShown(false);
+    setParsed(null);
     setMiss(false);
   }
 
@@ -54,16 +57,16 @@ export function LandingTryIt({ restaurant }: { restaurant: RestaurantOption | nu
       Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Europe/London";
     setUserZone(zone);
 
-    const parsed = parseLandingDemo(sentence, restaurant);
+    const next = parseLandingDemo(sentence, restaurant, new Date(), zone);
 
-    if (!parsed.matched) {
+    if (!next.matched) {
       setMiss(true);
-      setShown(false);
+      setParsed(null);
       return;
     }
 
     setMiss(false);
-    setShown(true);
+    setParsed(next);
   }
 
   return (
@@ -106,7 +109,7 @@ export function LandingTryIt({ restaurant }: { restaurant: RestaurantOption | nu
         </p>
       )}
 
-      {preview && <LandingPreviewCard {...preview} now={now} />}
+      {preview && <LandingPreviewCard {...preview} now={now || Date.now()} />}
 
       <button
         type="button"
@@ -124,12 +127,10 @@ export function LandingTryIt({ restaurant }: { restaurant: RestaurantOption | nu
 
 function buildPreview(
   restaurant: RestaurantOption,
-  sentence: string,
+  parsed: LandingDemoParse,
   userZone: string,
   now: number,
 ) {
-  const parsed = parseLandingDemo(sentence, restaurant, new Date(now || Date.now()));
-
   if (!parsed.matched) {
     return null;
   }

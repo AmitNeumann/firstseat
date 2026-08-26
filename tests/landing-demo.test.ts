@@ -42,6 +42,66 @@ describe("parseLandingDemo", () => {
     });
   });
 
+  it("parses the same sentence without commas", () => {
+    expect(
+      parseLandingDemo("minetta tavern sept 24 dinner for 2", minetta, now),
+    ).toEqual({
+      matched: true,
+      date: "2026-09-24",
+      partySize: 2,
+      meal: Meal.DINNER,
+    });
+  });
+
+  it("parses 'September 24' and '24 Sept'", () => {
+    expect(parseLandingDemo("Minetta, September 24, lunch for 4", minetta, now)).toEqual({
+      matched: true,
+      date: "2026-09-24",
+      partySize: 4,
+      meal: Meal.LUNCH,
+    });
+
+    expect(parseLandingDemo("Minetta 24 Sept dinner for 2", minetta, now)).toEqual({
+      matched: true,
+      date: "2026-09-24",
+      partySize: 2,
+      meal: Meal.DINNER,
+    });
+
+    expect(parseLandingDemo("Minetta, 24th of September, dinner for 2", minetta, now)).toEqual({
+      matched: true,
+      date: "2026-09-24",
+      partySize: 2,
+      meal: Meal.DINNER,
+    });
+  });
+
+  it("parses 'dinner for two'", () => {
+    expect(parseLandingDemo("Minetta, Sept 24, dinner for two", minetta, now).partySize).toBe(
+      2,
+    );
+  });
+
+  it("still previews Minetta when no restaurant is named", () => {
+    expect(parseLandingDemo("Sept 24, dinner for 2", minetta, now)).toEqual({
+      matched: true,
+      date: "2026-09-24",
+      partySize: 2,
+      meal: Meal.DINNER,
+    });
+  });
+
+  it("rolls forward when that table has already dropped", () => {
+    const afterDrop = new Date("2026-08-26T12:00:00.000Z");
+
+    expect(parseLandingDemo("Minetta, Sept 24, dinner for 2", minetta, afterDrop)).toEqual({
+      matched: true,
+      date: "2027-09-24",
+      partySize: 2,
+      meal: Meal.DINNER,
+    });
+  });
+
   it("does not reveal any other restaurant", () => {
     expect(parseLandingDemo("Via Carota, dinner for 2", minetta, now)).toEqual({
       matched: false,
