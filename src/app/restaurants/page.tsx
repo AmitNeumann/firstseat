@@ -34,8 +34,8 @@ export default async function RestaurantsPage() {
             The list
           </h1>
           <p className="max-w-[52ch] font-serif text-[18px] font-light leading-normal text-soft">
-            New York rooms we watch, with the exact hour each releases its tables. Pick
-            one and we&apos;ll set the alarm.
+            New York restaurants we watch, with the exact hour each releases its tables.
+            Pick one and we&apos;ll set the alarm.
           </p>
         </header>
 

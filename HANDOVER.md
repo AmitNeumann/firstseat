@@ -674,8 +674,8 @@ farthest right). Cards are sorted by soonest drop.
 
 - **Pending card:** restaurant name (Newsreader), Watching / Opens-within-24h pill, clay
   tabular countdown, the existing honey dual-timezone panel in `drop-times.tsx`, footer
-  "Opens on Resy · we alert you at …", honey **Edit** and cream **Cancel**. Cancel still
-  posts to `cancelWatch`.
+  "Opens on Resy · we alert you at …", honey **Edit** and cream **Delete**. Delete opens
+  a Confirm / Cancel dialog, then posts to `cancelWatch` only after Confirm.
 - **Open-window card** (espresso, 30 minutes past the drop): "THE WINDOW IS OPEN",
   **OPEN** instead of a countdown, "Book on Resy ↗", Dismiss (same `cancelWatch` action).
 - **Empty state:** honey-light panel, "Nothing on the books yet", clay New watch button.
