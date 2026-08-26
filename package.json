@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "alerts:send-test": "tsx scripts/send-test-alert.ts"
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
@@ -20,6 +21,7 @@
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "resend": "^6.24.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
