@@ -17,14 +17,21 @@ export function CreateWatchForm({
   latestDate,
   timezone,
   initialRestaurantId,
+  initialTargetDate,
+  initialPartySize,
+  initialMeal,
 }: {
   restaurants: RestaurantOption[];
   earliestDate: string;
   latestDate: string;
   /** The user's timezone, so drop times can be shown on their own clock. */
   timezone: string;
-  /** Set when the catalog (or a bookmark) already chose the restaurant. */
+  /** Set when the catalog, a bookmark, or a parse already chose the restaurant. */
   initialRestaurantId?: string;
+  /** Prefill from a parse. The diner still submits `createWatch` themselves. */
+  initialTargetDate?: string;
+  initialPartySize?: string;
+  initialMeal?: string;
 }) {
   const [state, action, pending] = useActionState(createWatch, undefined);
 
@@ -34,7 +41,7 @@ export function CreateWatchForm({
   const [restaurant, setRestaurant] = useState<RestaurantOption | null>(
     () => restaurants.find((entry) => entry.id === initialRestaurantId) ?? null,
   );
-  const [targetDate, setTargetDate] = useState("");
+  const [targetDate, setTargetDate] = useState(initialTargetDate ?? "");
 
   return (
     <form action={action} className="space-y-5">
@@ -50,7 +57,11 @@ export function CreateWatchForm({
       <WatchFieldset
         earliestDate={earliestDate}
         latestDate={latestDate}
-        defaults={state?.values ?? {}}
+        defaults={{
+          targetDate: state?.values?.targetDate ?? initialTargetDate,
+          partySize: state?.values?.partySize ?? initialPartySize,
+          meal: state?.values?.meal ?? initialMeal,
+        }}
         errors={state?.errors}
         onTargetDateChange={setTargetDate}
       />

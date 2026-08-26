@@ -3,7 +3,7 @@
 This document is the single source of truth for continuing work on FirstSeat. It assumes
 zero prior context. Read it top to bottom before making changes.
 
-**Last updated:** 25 August 2026
+**Last updated:** 26 August 2026
 **Course deadline:** 6 September 2026
 **Course brief:** `~/Desktop/fullstack project.docx` (RUNI CS 2026, "Become a Full-Stack Engineer")
 
@@ -13,12 +13,12 @@ zero prior context. Read it top to bottom before making changes.
 
 | | |
 | --- | --- |
-| **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Check `git log -5 --oneline` rather than trusting a hash here. Last origin product commit before this handover: `5ca4781` (Describe-it placeholder on create-watch). |
-| **Working tree** | check `git status -sb`. After this wrap-up is pushed (avatar menu name + this file), origin should match HEAD. |
-| **What works locally** | designed signed-out landing (Minetta-only Try it, feature-card icon+title on one row), designed sign-in/sign-up **with first/last name** and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new` keeps the original Watch a table layout plus a cream **Describe it** placeholder), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants |
+| **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Check `git log -5 --oneline` rather than trusting a hash here. |
+| **Working tree** | check `git status -sb`. |
+| **What works locally** | designed signed-out landing (Minetta-only Try it, feature-card icon+title on one row), designed sign-in/sign-up **with first/last name** and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
-| **What does not exist yet** | **actually sending alerts** (**top remaining product gap**, Resend + Vercel cron, see §5), the AI parse endpoint (wire into create-watch Describe it and the Minetta landing demo), most course documents (§8) |
-| **Tests** | Vitest, 8 files, **178 tests passing**. No component or end-to-end tests yet |
+| **What does not exist yet** | **actually sending alerts** (**top remaining product gap**, Resend + Vercel cron, see §5), wiring the parse endpoint into the Minetta landing demo (still the local parser), most course documents (§8) |
+| **Tests** | Vitest, 9 files, **194 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — returns 200 but still serves the **"coming soon" placeholder**. Verified, not assumed |
 
 ### 🔴 The deployment picture, which is easy to misread
@@ -30,7 +30,7 @@ Three branches, and none of the real product is deployed:
 | `origin/main` | `7857ff6` | placeholder + first handover. **This is what Vercel serves.** |
 | `main` (local) | `498c845` | ⚠️ 1 commit ahead of `origin/main`, **unpushed** — auth was fast-forwarded onto local `main` and never pushed |
 | `feat/auth` | `b3d1d71` | fully contained in `feat/watches`; nothing unique left on it |
-| `feat/watches` | working branch | everything: auth, watches, seed, tests, design foundation, landing, auth screens, My Watches, catalog, Settings, user names, Terms / Privacy, create-watch Describe-it placeholder |
+| `feat/watches` | working branch | everything: auth, watches, seed, tests, design foundation, landing, auth screens, My Watches, catalog, Settings, user names, Terms / Privacy, create-watch Describe it (Gemini parse) |
 
 That local-`main` commit is a loose end. It is harmless while unpushed, but pushing `main`
 by reflex would deploy auth **without** the Vercel environment variables, which is the one
@@ -90,19 +90,19 @@ from manually tracking release schedules across several booking platforms.
 | --- | --- | --- |
 | Framework | Next.js 16.3.1 (App Router, Turbopack) | ✅ working |
 | Language | TypeScript 5 (strict) | ✅ |
-| UI | Tailwind CSS v4 | 🟡 design system applied; landing, auth, My Watches, catalog, Settings, Terms/Privacy, and create/edit **designed** (create-watch keeps the original form card plus a Describe-it placeholder) |
+| UI | Tailwind CSS v4 | 🟡 design system applied; landing, auth, My Watches, catalog, Settings, Terms/Privacy, and create/edit **designed** (create-watch keeps the original form card plus Describe it) |
 | Linting | ESLint 9 (`eslint-config-next`) | ✅ passing |
-| Validation | Zod 4.4.3 | ✅ auth forms, watch forms, Settings, and the seed data |
+| Validation | Zod 4.4.3 | ✅ auth forms, watch forms, Settings, the seed data, and Gemini parse JSON |
 | Database | Supabase Postgres (free plan, London / eu-west-2) | ✅ tables created, **5 migrations** applied locally |
 | ORM | Prisma 7.9.1 + `@prisma/adapter-pg` | ✅ connected and verified |
 | Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
-| UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** (foundation through create-watch Describe-it placeholder) |
-| Testing | Vitest 4.1.11 | ✅ 178 unit tests passing (8 files); ❌ no component or E2E tests |
+| UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
+| Testing | Vitest 4.1.11 | ✅ 194 unit tests passing (9 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 | Alert delivery | `drop_alerts` stored, nothing sent | 🔜 **top remaining product gap**, Resend + Vercel cron, see §5 |
-| AI parse endpoint | provider not chosen yet | 🔜 after email sending; wire into Describe it and the Minetta landing demo, see §5 |
+| AI parse endpoint | Gemini (`GEMINI_API_KEY`, server-only) | ✅ create-watch Describe it → JSON → Zod → restaurant match → confirmation card (`Create this watch` / `Edit details`). Landing demo still uses the local parser |
 
 There is deliberately **no** UI component library, form library, date library or timezone
 library. Dates and timezones are handled with the platform's own `Intl` API (§5), which is a
@@ -260,7 +260,7 @@ firstseat/
 ├── HANDOVER.md              ← this file
 ├── README.md                ← still the default create-next-app readme (TODO: rewrite)
 ├── AGENTS.md / CLAUDE.md    ← auto-generated AI tool instructions, re-added by `next dev`
-├── .env.example             ← documents the 4 required env vars (placeholders only, committed)
+├── .env.example             ← documents required env vars including GEMINI_API_KEY (placeholders only, committed)
 ├── .env.local               ← REAL SECRETS, git-ignored, never commit
 ├── .gitignore               ← ignores .env* but re-includes !.env.example
 ├── package.json             ← build script is `prisma generate && next build`
@@ -294,6 +294,7 @@ firstseat/
     │   │   ├── login/page.tsx
     │   │   └── signup/page.tsx
     │   ├── auth/confirm/route.ts   ← where the emailed confirmation link lands
+    │   ├── api/watches/parse/route.ts ← POST: Gemini parse → proposal JSON (signed-in only)
     │   ├── dashboard/page.tsx      ← protected; designed My Watches
     │   ├── restaurants/page.tsx    ← protected; designed catalog ("The list")
     │   ├── settings/page.tsx       ← protected; one card (name, email, timezone)
@@ -302,7 +303,7 @@ firstseat/
     │   │   ├── terms/page.tsx      ← /terms
     │   │   └── privacy/page.tsx    ← /privacy
     │   └── watches/
-    │       ├── new/page.tsx        ← "Watch a table"; cream Describe-it placeholder above the original form card
+    │       ├── new/page.tsx        ← "Watch a table"; Describe it parses via Gemini into a confirmation card, then the original form
     │       └── [id]/edit/page.tsx  ← edit one; 404s for someone else's watch
     ├── components/
     │   ├── forms/fields.tsx        ← FieldShell / SelectField / TextField / DateField / FormAlert / SubmitButton
@@ -314,7 +315,9 @@ firstseat/
     │   ├── legal/                  ← LegalDocument: reads content/*.md, Fraunces title / Newsreader h2
     │   └── watches/
     │       ├── create-watch-form.tsx   ← Client Component, useActionState; original fields + helper copy
-    │       ├── describe-it-placeholder.tsx ← styled AI input; does not submit or parse yet
+    │       ├── create-watch-composer.tsx ← Describe it + optional parse preview + form
+    │       ├── describe-it.tsx         ← sentence + Read it; does not create a watch
+    │       ├── parse-preview.tsx       ← centered overlay; Create this watch via createWatch; Edit details fills the form
     │       ├── edit-watch-form.tsx
     │       ├── watch-fieldset.tsx      ← date + party size + meal, shared by both forms
     │       ├── restaurant-picker.tsx   ← accessible type-ahead combobox
@@ -348,9 +351,13 @@ firstseat/
             ├── queries.ts     ← server-only reads; user data scoped by userId
             ├── options.ts     ← restaurant search/filter + catalog pills (pure, tested)
             ├── landing-demo.ts ← Minetta-only sentence parser for the signed-out Try it card
+            ├── parse.ts        ← Zod + restaurant resolve + proposeWatchFields (pure, tested)
+            ├── parse-gemini.ts ← server-only Gemini call; GEMINI_API_KEY, never NEXT_PUBLIC
+            ├── parse-rate-limit.ts ← in-memory 30 calls / user / day
+            ├── parse-limits.ts ← PARSE_MAX_CHARS (safe to import from the client)
             └── format.ts      ← display formatting, incl. dual-timezone phrasing, countdown, open-window
 
-tests/                       ← Vitest, 178 tests
+tests/                       ← Vitest, 194 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
 ├── seed-validation.test.ts  ← the hand-entered-data schema
@@ -358,7 +365,8 @@ tests/                       ← Vitest, 178 tests
 ├── watch-schema.test.ts
 ├── landing-demo.test.ts     ← Minetta-only parse + countdown phrasing + isDropOpen
 ├── timezone.test.ts         ← IANA list + UpdateTimezoneSchema
-└── auth-display.test.ts     ← avatar initials, greeting, displayFullName, SignupSchema / UpdateNameSchema names
+├── auth-display.test.ts     ← avatar initials, greeting, displayFullName, SignupSchema / UpdateNameSchema names
+└── watch-parse.test.ts      ← restaurant resolve, untrusted JSON, rate limit
 ```
 
 ### How a sign-in actually flows
@@ -609,9 +617,10 @@ database — the other seven restaurants never leave the server. The drop times 
 come from the real `computeDropMoment`. Typing another restaurant name does not reveal it.
 
 The Try it card uses a small local parser in `src/lib/watches/landing-demo.ts`. **Do not
-treat gaps in that parser as a bug to fix.** It is a stand-in until the real AI parse
-endpoint exists; at that point the demo will be wired to the real parser (still
-Minetta-only for signed-out visitors). See §5.
+treat gaps in that parser as a bug to fix.** The real Gemini parse lives on create-watch
+(`POST /api/watches/parse`). The landing demo stays local and Minetta-only on purpose so
+signed-out visitors never spend API quota. Optional later: wire the demo to the same
+helper, still Minetta-only. See §5.
 
 **Sign in / Sign up — designed**
 
@@ -698,16 +707,17 @@ files is a `mailto:` link.
 The footer on every `SiteFooter` screen is one line:
 **FirstSeat · New York · Terms · Privacy**.
 
-**Create / edit watch — designed as the original form plus a Describe-it placeholder**
+**Create / edit watch — original form plus a working Describe-it parse**
 
 `/watches/new` is still the original page: **← Your watches**, heading **Watch a table**,
 the original subtitle, the original bordered form card, original field labels (Restaurant,
 Date you want to eat, Party size, Meal), **Create watch**, and the helper
 "Restaurants release tables on their own local clock…". Above that card, on the **cream
-page background** (not a separate dark box), sits a styled **Describe it** input
-(`describe-it-placeholder.tsx`, placeholder "Minetta, Sept 24, dinner for 2") and an
-**or enter it yourself** divider. The parse backend is **not built**; the field does not
-submit and does not fill the form.
+page background**, sits **Describe it** (`describe-it.tsx`) with **Read it** (Enter also
+submits). That calls `POST /api/watches/parse`. A match opens a centered **We understood**
+overlay (`parse-preview.tsx`, dimmed backdrop; X / click outside / Escape dismisses):
+summary line, **Create this watch** (posts hidden fields to `createWatch`), and **Edit
+details** (pre-fills the manual form). Incomplete parses skip the one-click button.
 
 `/watches/[id]/edit` is the original edit page (no Describe-it field). Edit is scoped by
 `userId` and 404s for someone else's watch. Restaurant search on create is the existing
@@ -747,7 +757,7 @@ restaurants. Every Prisma read of user data stays scoped by `userId`.
 | My Watches | `/dashboard` | ✅ designed (`Hi {name}! Your Watches` when named; avatar menu shows name + email; New watch on the page; live countdown; honey dual-timezone panel) |
 | Restaurants catalog | `/restaurants` | ✅ designed (typographic cards; chips from real platforms; autocomplete combobox; **known minor issue:** filter-on-Enter is not fully working). Click → create watch |
 | Settings | `/settings` | ✅ designed (one card: name, email, timezone; `updateSettings`) |
-| Create / edit watch | `/watches/new`, `/watches/[id]/edit` | ✅ original layout kept. Create-watch adds a cream **Describe it** placeholder + **or enter it yourself** divider above the existing form. Live `DropPreview` is still on the form |
+| Create / edit watch | `/watches/new`, `/watches/[id]/edit` | ✅ original layout kept. Create-watch **Describe it** parses via Gemini into a confirmation card (`Create this watch` / `Edit details`). Live `DropPreview` is still on the form |
 
 Guidance that still applies:
 
@@ -759,7 +769,7 @@ Guidance that still applies:
 - **Do not break the accessibility already in the combobox** — ARIA combobox with keyboard
   navigation. Restyle it; do not rewrite it casually.
 
-### 🔴 Tomorrow: send the alert emails (top remaining product feature)
+### 🔴 Next: send the alert emails (top remaining product feature)
 
 **This is the top priority.** The largest functional gap, and worth being honest about
 in the presentation: **nothing sends anything yet.** `drop_alerts` rows are computed
@@ -779,76 +789,41 @@ Note the honest constraint for the demo: cron on the Vercel free plan runs at mo
 daily, which is far too coarse for a to-the-minute alert. Say so rather than implying
 it works — a clear account of the limitation is worth more marks than a vague claim.
 
-### 🔜 Then: the AI natural-language parse endpoint
+### ✅ Built: the AI natural-language parse endpoint (complete)
 
-**Planned, not parked.** Build this **after** email sending. Do not start it now, and
-do not "fix" the landing Try it parser as a substitute. That parser is a local
-stand-in. When this endpoint exists, wire it into **both** the create-watch
-**Describe it** placeholder **and** the landing demo (still Minetta-only for
-signed-out visitors). **The manual form must keep working standalone** if parse
-fails or is unused.
+Gemini extracts `{ restaurant, date, party, meal }` from one sentence. **Drop times still
+come only from `computeDropMoment`.** The model never computes them. Verified working
+locally on create-watch (Flash-Lite; do not send `thinkingBudget: 0`).
 
-**The idea.** The user types one sentence — *"table for 2 at Via Carota next Friday for
-dinner"* — and it is turned into `{ restaurant, date, party, meal }`, which they
-then confirm.
+**Wired into create-watch Describe it.** Not yet wired into the signed-out landing demo
+(that still uses `landing-demo.ts`, Minetta-only on purpose). **The manual form works
+standalone** if parse fails or is unused.
 
 **The flow, and the rule that matters most:**
 
 ```
-free text ──▶ model ──▶ raw JSON ──▶ Zod parse ──▶ resolve restaurant name to a
+free text ──▶ Gemini ──▶ raw JSON ──▶ Zod parse ──▶ resolve restaurant name to a
                                           │         restaurants row
                                           │
                                     (reject if invalid)
                                           ▼
-                              pre-filled form the user CONFIRMS
+                              confirmation card the user CONFIRMS (or Edit details)
                                           ▼
                                   existing createWatch action
 ```
 
-**The model output is untrusted input.** It is a string from a remote service that can
-hallucinate a restaurant that does not exist, a 400-person party, or a date in 1987. It must
-go through Zod exactly like a form submission, and it must never reach Prisma directly. The
-parse endpoint's job ends at *proposing* values; the existing, already-validated
-`createWatch` action is still the only thing that writes a Watch.
-
-**Design constraints to respect:**
-
-- **The parse result is a suggestion, not a submission.** Show the user the parsed fields and
-  make them confirm. This is both a correctness safeguard and a much better demo — you can
-  show it getting something slightly wrong and the user fixing it.
-- **Require a signed-in user.** `await requireAppUser()` as the first line. Every call costs
-  real money, so an unauthenticated endpoint is someone else's free model access.
-- **Rate-limit per user.** There is none anywhere in the app today (§5 limitations). This is
-  the first endpoint where its absence costs money rather than just capacity.
-- **Relative dates need the user's timezone.** "Next Friday" is only meaningful in a zone —
-  this is exactly why `users.timezone` is captured at signup. Pass it into the prompt and
-  resolve the date server-side; do not let the model guess today's date.
-- **Restaurant resolution is a database problem, not a model problem.** The model returns a
-  name; our code matches it against `restaurants`. Decide explicitly what happens on no match
-  or an ambiguous match — probably "we don't track that restaurant yet", not silently creating
-  a row.
-- **The API key is server-only.** A plain `OPENAI_API_KEY`-style variable, never
-  `NEXT_PUBLIC_*` (§6 explains why that prefix ships to the browser). Add it to `.env.example`
-  as a placeholder and to Vercel.
-
-**Decisions still to make** — these were not settled, so choose and record them here:
-
-| Decision | Notes |
+| Piece | Where |
 | --- | --- |
-| Which provider and model | Cheapest capable model is plenty; this is short-string extraction, not reasoning |
-| Route Handler or Server Action | A Route Handler under `src/app/api/` is easier to test with `curl` and to rate-limit; a Server Action needs less wiring |
-| Structured output method | Prefer the provider's JSON/structured-output mode over parsing prose, then still validate with Zod |
-| Failure behaviour | On timeout or a bad response, fall back to the plain form rather than blocking the user |
-| Cost ceiling | Free-tier friendly: cap input length and calls per user per day |
+| Route | `POST /api/watches/parse` — signed-in via `getAppUser()` (401 if not). Does not write a watch. |
+| Model | `gemini-flash-lite-latest` through `@google/genai`. `gemini-2.5-flash` 404s for new keys; `gemini-3.5-flash` works but spends ~10s thinking. Timeout 12s. No retries. Do **not** send `thinkingBudget: 0` — this alias returns 400 `INVALID_ARGUMENT`. Prompt is three short lines; restaurant matching is DB-side after the call. Logs `[watches/parse] gemini` and `[watches/parse] timing`. |
+| Key | `GEMINI_API_KEY` in `.env.local` — **never** `NEXT_PUBLIC_`. Placeholder is in `.env.example`. Add it to Vercel before a preview that should parse. |
+| Untrusted JSON | `proposeWatchFields` in `src/lib/watches/parse.ts` (tested). Restaurant match uses the same name logic as the picker; unknown names are refused, not invented. |
+| Rate limit | 30 calls / user / day in process memory (`parse-rate-limit.ts`). Resets on deploy; not shared across Vercel instances. Input capped at 280 characters. |
+| UI | `describe-it.tsx`: Read it or Enter, honey bar with a clay spinner + **Reading your request…**. `parse-preview.tsx`: centered overlay (backdrop click / X / Escape), **Create this watch** or **Edit details**. Manual form stays standalone. |
+| Timezone | Prompt includes "today" in `users.timezone`. Dates that fail Zod or sit outside the form bounds are dropped; the restaurant fill can still apply. |
 
-This is also a strong presentation beat: the brief encourages using AI tools, and "I used a
-model for the fuzzy part and kept the deterministic parts deterministic" is a defensible
-architectural decision rather than a gimmick.
-
-One thing is easier than it was when this was first written: **restaurant resolution is
-already solved**. `matchesQuery` and `filterRestaurants` in `src/lib/watches/options.ts` are
-pure, tested, accent-insensitive and word-order-insensitive. The model returns a name; feed
-it through those rather than inventing new matching.
+Do not "fix" the landing Try it parser as if it were this endpoint. Optional later: call the
+same parse helper there, still Minetta-only for signed-out visitors.
 
 ### 🔜 Then: merge `feat/watches` to `main`
 
@@ -924,8 +899,8 @@ in browser code.
 **🔴 `NEXT_PUBLIC_` means "public".** The prefix is what tells Next.js to inline the value into
 the JavaScript sent to the browser, where anyone can read it. That is fine for the Supabase
 anon key, which is designed for it. It is **not** fine for anything billable or privileged —
-when the AI parse endpoint arrives, its API key must be a plain server-only variable, and the
-Supabase `service_role` key must never appear in one either.
+`GEMINI_API_KEY` is a plain server-only variable (never `NEXT_PUBLIC_`), and the Supabase
+`service_role` key must never appear in one either.
 
 **🟠 The generated Prisma client is git-ignored.** It lives in `src/generated/prisma`. After
 cloning, or after any schema change, run `npx prisma generate`. Vercel handles this via the
@@ -1027,8 +1002,9 @@ npm run dev                  # http://localhost:3000
 
 ### Required environment variables
 
-All four live in `.env.local`, which is git-ignored. `.env.example` documents them with
-placeholders. **Never commit real values; never paste them into a chat.**
+All four database/auth vars plus `GEMINI_API_KEY` live in `.env.local`, which is git-ignored.
+`.env.example` documents them with placeholders. **Never commit real values; never paste
+them into a chat.**
 
 | Variable | Where to get it | Used by |
 | --- | --- | --- |
@@ -1036,14 +1012,14 @@ placeholders. **Never commit real values; never paste them into a chat.**
 | `DIRECT_URL` | Same panel (non-pooled, port **5432**) | Prisma CLI migrations |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Supabase Auth |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page (anon / publishable key) | Supabase Auth |
+| `GEMINI_API_KEY` | Google AI Studio → API keys | Create-watch parse route (server-only) |
 
 `.env.example` also documents one optional variable, `NEXT_PUBLIC_SITE_URL`, commented out.
 It is normally unnecessary: the signup action reads the request's `Origin` header, which is
 already correct on localhost, previews and production alike.
 
-The AI parse endpoint in §5 will add a fifth variable for its API key. It must **not** carry
-the `NEXT_PUBLIC_` prefix — see §6. Sending alerts may add SMTP / Resend-style secrets the
-same way: server-only, never `NEXT_PUBLIC_`.
+Add `GEMINI_API_KEY` to Vercel before a preview that should parse. Sending alerts may add
+a Resend-style secret the same way: server-only, never `NEXT_PUBLIC_`.
 
 The anon/publishable key is safe to expose to the browser by design. The **`service_role`
 key must never** be used in a `NEXT_PUBLIC_` variable — it bypasses RLS. It is not needed today.
@@ -1065,8 +1041,8 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **178 unit tests over 8 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, and name/initials / signup-name / displayFullName. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
-| 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and per-user rate limiting once the AI endpoint exists |
+| 6 | Test code | 🟡 **Partly** | Vitest installed; **194 unit tests over 9 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, and parse-proposal / restaurant-resolve / rate-limit. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and the parse endpoint's 30/user/day in-memory rate limit |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
 | 10 | 10–15 min presentation | ❌ **Outstanding** | Product, problem, users, business value, architecture, DB, flows, tests, scale, security, what you'd improve |
@@ -1076,11 +1052,12 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
 - **Working product features.** Authentication, watches, the catalog, Settings,
-  Terms/Privacy, and the create-watch Describe-it placeholder are built locally on
-  `feat/watches`. The remaining functional gap that matters for the demo is that
-  **no alert is ever actually sent** (§5) — the alerts are computed and stored, but
-  nothing delivers them (build with Resend + Vercel cron; mark sent so they cannot
-  double-fire). The AI natural-language parse endpoint (§5) is planned after that.
+  Terms/Privacy, and create-watch Describe it (Gemini parse → confirmation card, then
+  `createWatch`)
+  are built locally on `feat/watches`. The remaining functional gap that matters for the
+  demo is that **no alert is ever actually sent** (§5) — the alerts are computed and
+  stored, but nothing delivers them (build with Resend + Vercel cron; mark sent so they
+  cannot double-fire).
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -1095,7 +1072,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (178 tests)
+npm test                    # Vitest, single run (194 tests)
 npm run test:watch          # Vitest in watch mode
 
 # Prisma / database

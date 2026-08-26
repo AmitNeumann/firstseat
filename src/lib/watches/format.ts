@@ -56,6 +56,22 @@ export function formatLongDate(instant: Date, timeZone: string): string {
   }).format(instant);
 }
 
+/** e.g. "29 Sep 2026" — a civil date with the year, for parse confirmation. */
+export function formatMediumDate(value: string): string {
+  const civil = parseCivilDate(value);
+
+  if (!civil) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
 /** e.g. "Thu 24 Sep" — a civil date with no year, for card meta lines. */
 export function formatShortDate(value: string): string {
   const civil = parseCivilDate(value);
