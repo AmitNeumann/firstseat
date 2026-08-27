@@ -30,27 +30,26 @@ enumeration-safe "Check your email for a reset link.", `/forgot-password` and
 watches, drop-time calc, Gemini parse, Resend mailer, full design, Terms/Privacy all work
 on `feat/watches`.
 
-**The very next step is the production merge.** Vercel env vars (§7) and Supabase redirect
-URLs (`https://firstseat-lemon.vercel.app`, `https://firstseat-lemon.vercel.app/**`,
-`http://localhost:3000/**`) are **already in place**. Remaining for go-live: merge
-`feat/watches` → `main` and push `main` (that is the deploy), check Prisma migrations on
-the live database, then verify the live site.
-
-Merging `feat/watches` to `main` auto-deploys on Vercel. Merge `feat/watches` (it already
-contains `feat/auth`); do **not** push the old local-`main`-only auth commit by itself.
+**`feat/watches` is merged to `main` (5cd281b).** The linked Supabase database already had
+all 5 Prisma migrations (`prisma migrate status` = up to date; `migrate diff` empty).
+**Do not run `prisma migrate deploy`.** The first Vercel production deploy **failed**
+because Hobby rejects `* * * * *` in `vercel.json`; the live URL still serves the
+placeholder until a follow-up commit with a daily cron deploys. Env vars and Supabase
+redirects were already in place.
 
 1. ~~Add ALL environment variables to Vercel~~ **Done.**
 2. ~~Add production redirect URLs in Supabase~~ **Done.** Covers email confirmation,
    **password reset** (`/auth/confirm?next=/reset-password`), and **Google OAuth**.
-3. **Merge `feat/watches` into `main` and push `main`.** That triggers the Vercel
-   production deploy. Apply any unapplied Prisma migrations on the live database if needed
-   (`image_url`, user names).
-4. **Verify the live site** — homepage, sign-in (email + Google), forgot-password, a watch,
-   Describe it parse, Settings. Confirm it is no longer the "coming soon" placeholder.
+3. ~~Merge `feat/watches` into `main` and push `main`~~ **Done** (`7857ff6..5cd281b`).
+   Live Prisma schema already matched; no migrate command.
+4. **Land a Hobby-legal cron and verify the live site** — homepage, sign-in (email +
+   Google), forgot-password, a watch, Describe it parse, Settings. Confirm it is no
+   longer the "coming soon" placeholder.
 5. **Set up an external free cron** (e.g. [cron-job.org](https://cron-job.org)) to
    `GET` or `POST` `https://firstseat-lemon.vercel.app/api/cron/alerts` **every minute**,
    header `Authorization: Bearer <CRON_SECRET>`. Vercel **Hobby** cron is at most **daily**,
-   which cannot deliver a 5-minute alert. `vercel.json` still asks for `* * * * *`; the
+   which cannot deliver a 5-minute alert. `vercel.json` uses `0 4 * * *` (once a day) so
+   Hobby will deploy; a minute-level expression **fails the production build**. The
    external ping is what actually makes alerts fire on time. The route 401s without the
    secret.
 6. **Verify a domain in Resend** (or another sending approach) so alert mail can go to
@@ -295,7 +294,7 @@ firstseat/
 ├── .env.local               ← REAL SECRETS, git-ignored, never commit
 ├── .gitignore               ← ignores .env* but re-includes !.env.example
 ├── package.json             ← build script is `prisma generate && next build`; `alerts:send-test` for a local preview email
-├── vercel.json              ← Vercel Cron: GET `/api/cron/alerts` every minute (`* * * * *`)
+├── vercel.json              ← Vercel Cron: GET `/api/cron/alerts` daily (`0 4 * * *`; Hobby rejects every-minute)
 ├── scripts/
 │   └── send-test-alert.ts   ← local preview: sends one email, does **not** mark the row SENT
 ├── next.config.ts           ← empty default config
@@ -892,8 +891,10 @@ written when the watch is created. The mailer **does not** call `computeDropMome
    `notifications` row so the next run retries.
 4. **`GET/POST /api/cron/alerts`** — what Vercel Cron hits. Requires
    `Authorization: Bearer $CRON_SECRET`. Empty secret → 401.
-5. **`vercel.json`** — `"schedule": "* * * * *"` on `/api/cron/alerts`. **Vercel Cron
-   only runs in production**, not on preview or localhost.
+5. **`vercel.json`** — `"schedule": "0 4 * * *"` on `/api/cron/alerts`. Hobby allows at
+   most one run per day; `* * * * *` **fails the Vercel deploy** (seen 27 Aug 2026 on
+   the first `main` push). **Vercel Cron only runs in production**, not on preview or
+   localhost. Minute-level delivery still needs the external ping below.
 6. **Local proof:** `npm run alerts:send-test` (`scripts/send-test-alert.ts`). Sends one
    preview using the latest scheduled watch, prefixes the subject with `[Preview]`, and
    **does not** mark the row SENT. Verified 26 August 2026 (L'Artusi). Resend's test
@@ -904,7 +905,8 @@ Never commit `.env.local`. Add both on Vercel **before** merging (§0).
 
 **Vercel Hobby cron is at most daily.** That cannot deliver a 5-minute alert. After
 deploy, ping `/api/cron/alerts` every minute from a free external cron (e.g. cron-job.org)
-with `Authorization: Bearer $CRON_SECRET`. Keep `vercel.json` as documentation of intent.
+with `Authorization: Bearer $CRON_SECRET`. `vercel.json` stays on a daily schedule so
+Hobby can deploy; do not put `* * * * *` back.
 
 **Resend test domain** (`onboarding@resend.dev`) only delivers to the account owner.
 Verify a sending domain in Resend (or switch from-address) before expecting alerts to
