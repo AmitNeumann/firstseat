@@ -26,15 +26,15 @@ const optionalName = z
   .max(40, { error: "Use 40 characters or fewer." })
   .transform((value) => (value.length === 0 ? null : value));
 
+const newPasswordField = z
+  .string()
+  .min(8, { error: "Use at least 8 characters." })
+  // bcrypt silently ignores anything past 72 bytes.
+  .max(72, { error: "Use 72 characters or fewer." });
+
 export const SignupSchema = z.object({
   email: emailField,
-  password: z
-    .string()
-    .min(8, { error: "Use at least 8 characters." })
-    // Supabase hashes passwords with bcrypt, which silently ignores anything past 72
-    // bytes. Rejecting here avoids a password that is longer than the part that is
-    // actually checked at sign-in.
-    .max(72, { error: "Use 72 characters or fewer." }),
+  password: newPasswordField,
   timezone: timezoneField,
   firstName: optionalName,
   lastName: optionalName,
@@ -49,6 +49,20 @@ export const LoginSchema = z.object({
   email: emailField,
   password: z.string().min(1, { error: "Enter your password." }),
 });
+
+export const ForgotPasswordSchema = z.object({
+  email: emailField,
+});
+
+export const ResetPasswordSchema = z
+  .object({
+    password: newPasswordField,
+    confirmPassword: z.string().min(1, { error: "Re-enter the new password." }),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    path: ["confirmPassword"],
+    error: "Those passwords do not match.",
+  });
 
 /** Settings: the zone used for "your time" on My Watches. */
 export const UpdateTimezoneSchema = z.object({
@@ -88,6 +102,7 @@ export type AuthFormState =
       errors?: {
         email?: string[];
         password?: string[];
+        confirmPassword?: string[];
         timezone?: string[];
         firstName?: string[];
         lastName?: string[];

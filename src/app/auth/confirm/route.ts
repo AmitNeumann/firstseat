@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   if (providerError) {
     console.error("[auth/confirm] provider rejected link:", providerError);
 
-    return failure(request, "link_expired");
+    return failure(request, recoveryFailure(searchParams, "link_expired"));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -49,22 +49,22 @@ export async function GET(request: NextRequest) {
       : null;
 
   if (!result) {
-    return failure(request, "link_invalid");
+    return failure(request, recoveryFailure(searchParams, "link_invalid"));
   }
 
   if (result.error || !result.data.user) {
-    // Logged rather than shown: Supabase's message is written for whoever is reading the
-    // server logs, not for the person who clicked the link.
     console.error("[auth/confirm] could not establish session:", result.error);
+
+    const mismatch =
+      result.error?.code === "flow_state_not_found" ||
+      Boolean(result.error?.message?.includes("code verifier"));
 
     return failure(
       request,
-      // A code that Supabase accepted but that cannot be exchanged here almost always
-      // means the PKCE verifier cookie is missing, i.e. a different browser.
-      result.error?.code === "flow_state_not_found" ||
-        result.error?.message.includes("code verifier")
-        ? "link_mismatch"
-        : "link_expired",
+      recoveryFailure(
+        searchParams,
+        mismatch ? "link_mismatch" : "link_expired",
+      ),
     );
   }
 
@@ -75,6 +75,33 @@ export async function GET(request: NextRequest) {
   return redirectNoStore(request, safeNextPath(searchParams.get("next")));
 }
 
+function recoveryFailure(
+  searchParams: URLSearchParams,
+  reason: Extract<ConfirmErrorKey, "link_expired" | "link_invalid" | "link_mismatch">,
+): ConfirmErrorKey {
+  const next = searchParams.get("next");
+  const type = searchParams.get("type");
+  const isReset = next === "/reset-password" || type === "recovery";
+
+  if (!isReset) {
+    return reason;
+  }
+
+  if (reason === "link_mismatch") {
+    return "reset_mismatch";
+  }
+
+  if (reason === "link_invalid") {
+    return "reset_invalid";
+  }
+
+  return "reset_expired";
+}
+
 function failure(request: NextRequest, reason: ConfirmErrorKey) {
-  return redirectNoStore(request, `/login?error=${reason}`);
+  const path = reason.startsWith("reset_")
+    ? `/forgot-password?error=${reason}`
+    : `/login?error=${reason}`;
+
+  return redirectNoStore(request, path);
 }

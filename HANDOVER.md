@@ -15,37 +15,38 @@ zero prior context. Read it top to bottom before making changes.
 | --- | --- |
 | **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Check `git log -5 --oneline` rather than trusting a hash here. |
 | **Working tree** | check `git status -sb`. |
-| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview verified locally; production needs deploy + external minute cron + Resend domain — §0) |
+| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, **Forgot password** (`/forgot-password` → email link → `/reset-password`), and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview verified locally; production needs deploy + external minute cron + Resend domain — §0) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
-| **What does not exist yet** | **production deploy** of `feat/watches` (Vercel env vars + Supabase redirects **before** merge — §0), minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), Resend domain so alerts can reach any inbox, most course documents + presentation (§8) |
-| **Tests** | Vitest, 11 files, **214 tests passing**. No component or end-to-end tests yet |
+| **What does not exist yet** | **production deploy** of `feat/watches` (Vercel env vars and Supabase redirects are **done**; remaining: merge → `main`, live DB migrations check, verify the live site — §0), minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), Resend domain so alerts can reach any inbox, most course documents + presentation (§8) |
+| **Tests** | Vitest, 11 files, **220 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — returns 200 but still serves the **"coming soon" placeholder**. Verified, not assumed |
 
 ### What's left, in this order
 
-**Building is done.** Auth (email + Google), watches, drop-time calc, Gemini parse, Resend
-mailer, full design, Terms/Privacy all work locally on `feat/watches`. The next phase is
-**deploying to production**, which is a big, careful step: merging `feat/watches` to `main`
-auto-deploys on Vercel. **Do not merge until steps 1 and 2 are done**, or the live site
-500s on every request (`src/proxy.ts` throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are
-missing).
+**The app is feature-complete.** Auth (email + Google, with **Continue with Google** below
+the email/password form; **forgot-password** via Supabase `resetPasswordForEmail`,
+enumeration-safe "Check your email for a reset link.", `/forgot-password` and
+`/reset-password`, verified end-to-end: reset email received, new password set, signed in),
+watches, drop-time calc, Gemini parse, Resend mailer, full design, Terms/Privacy all work
+on `feat/watches`.
 
-1. **Add ALL environment variables to Vercel** (Production, and Preview if you use it) —
-   **before** merging. Exact names in §7. The seven the running app needs:
-   `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`.
-   Optional: `NEXT_PUBLIC_SITE_URL`. Server-only keys must **not** be prefixed
-   `NEXT_PUBLIC_`. **Never paste real values into git or chat.**
-2. **Add production redirect URLs in Supabase** (Authentication → URL Configuration) for
-   the live domain (`https://firstseat-lemon.vercel.app` and `https://firstseat-lemon.vercel.app/**`,
-   plus keep `http://localhost:3000/**`). Without this, email confirmation and **Google
-   OAuth** bounce to the wrong place after deploy.
-3. **Then merge `feat/watches` into `main` and push `main`.** That is what triggers the
-   Vercel production deploy. Merge `feat/watches` (it already contains `feat/auth`); do
-   **not** push the old local-`main`-only auth commit by itself. Apply any unapplied
-   Prisma migrations on the live database if needed (`image_url`, user names).
-4. **Verify the live site** — homepage, sign-in (email + Google), a watch, Describe it
-   parse, Settings. Confirm it is no longer the "coming soon" placeholder.
+**The very next step is the production merge.** Vercel env vars (§7) and Supabase redirect
+URLs (`https://firstseat-lemon.vercel.app`, `https://firstseat-lemon.vercel.app/**`,
+`http://localhost:3000/**`) are **already in place**. Remaining for go-live: merge
+`feat/watches` → `main` and push `main` (that is the deploy), check Prisma migrations on
+the live database, then verify the live site.
+
+Merging `feat/watches` to `main` auto-deploys on Vercel. Merge `feat/watches` (it already
+contains `feat/auth`); do **not** push the old local-`main`-only auth commit by itself.
+
+1. ~~Add ALL environment variables to Vercel~~ **Done.**
+2. ~~Add production redirect URLs in Supabase~~ **Done.** Covers email confirmation,
+   **password reset** (`/auth/confirm?next=/reset-password`), and **Google OAuth**.
+3. **Merge `feat/watches` into `main` and push `main`.** That triggers the Vercel
+   production deploy. Apply any unapplied Prisma migrations on the live database if needed
+   (`image_url`, user names).
+4. **Verify the live site** — homepage, sign-in (email + Google), forgot-password, a watch,
+   Describe it parse, Settings. Confirm it is no longer the "coming soon" placeholder.
 5. **Set up an external free cron** (e.g. [cron-job.org](https://cron-job.org)) to
    `GET` or `POST` `https://firstseat-lemon.vercel.app/api/cron/alerts` **every minute**,
    header `Authorization: Bearer <CRON_SECRET>`. Vercel **Hobby** cron is at most **daily**,
@@ -68,20 +69,16 @@ Three branches, and none of the real product is deployed:
 | `origin/main` | `7857ff6` | placeholder + first handover. **This is what Vercel serves.** |
 | `main` (local) | `498c845` | ⚠️ 1 commit ahead of `origin/main`, **unpushed** — auth was fast-forwarded onto local `main` and never pushed |
 | `feat/auth` | `b3d1d71` | fully contained in `feat/watches`; nothing unique left on it |
-| `feat/watches` | working branch | everything: auth (email + Google OAuth), watches, seed, tests, design, landing Try it (local Minetta parser), My Watches, catalog, Settings, Terms / Privacy, create-watch Describe it (Gemini parse), Resend alert mailer + cron route |
+| `feat/watches` | working branch | everything: auth (email + Google OAuth + forgot-password), watches, seed, tests, design, landing Try it (local Minetta parser), My Watches, catalog, Settings, Terms / Privacy, create-watch Describe it (Gemini parse), Resend alert mailer + cron route |
 
-That local-`main` commit is a loose end. It is harmless while unpushed, but pushing `main`
-by reflex would deploy auth **without** the Vercel environment variables, which is the one
-change that takes the whole site down rather than just one page.
+That local-`main` commit is a loose end. It is harmless while unpushed. Do **not** push
+it: merge `feat/watches` instead. Env vars are already on Vercel, so a mistaken push of
+that old auth-only commit would deploy an incomplete product rather than 500 the site.
 
-### 🔴 Do these before anything is merged to `main`
+### Ready to merge
 
-1. **Add every Vercel env var in §7** — not only the two `NEXT_PUBLIC_SUPABASE_*` keys.
-   Missing those two 500s the **entire site**. Missing `RESEND_API_KEY` / `CRON_SECRET`
-   only breaks alerts; missing `GEMINI_API_KEY` only breaks Describe it. Check the Vercel
-   dashboard; this has **not been verified**.
-2. **Add the redirect allow-list in Supabase** (step 2 above), or confirmation emails and
-   Google sign-in will send people to the wrong URL.
+1. ~~Vercel env vars in §7~~ **Done.**
+2. ~~Supabase redirect allow-list~~ **Done.**
 
 Merging is a deliberate act: `main` auto-deploys. Work was pushed to branches precisely so
 the placeholder stayed up while the product was unfinished. When you do merge, merge
@@ -89,10 +86,9 @@ the placeholder stayed up while the product was unfinished. When you do merge, m
 
 ### Still unverified
 
-- **The Vercel environment variables** — the single blocker on a real deployment.
-- **Supabase production redirect URLs** for the live domain.
 - **Nothing of the real product is deployed**, so none of the watch feature has run
-  anywhere but localhost (Google sign-in and Resend preview were verified locally).
+  anywhere but localhost (Google sign-in, password reset, and Resend preview were verified
+  locally). After merge: homepage, sign-in, forgot-password, a watch, Describe it, Settings.
 
 ---
 
@@ -131,10 +127,10 @@ from manually tracking release schedules across several booking platforms.
 | Validation | Zod 4.4.3 | ✅ auth forms, watch forms, Settings, the seed data, and Gemini parse JSON |
 | Database | Supabase Postgres (free plan, London / eu-west-2) | ✅ tables created, **5 migrations** applied locally |
 | ORM | Prisma 7.9.1 + `@prisma/adapter-pg` | ✅ connected and verified |
-| Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, Google OAuth, `users` row on first sign-in |
+| Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, Google OAuth, forgot-password, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
 | UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
-| Testing | Vitest 4.1.11 | ✅ 214 unit tests passing (11 files); ❌ no component or E2E tests |
+| Testing | Vitest 4.1.11 | ✅ 220 unit tests passing (11 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 | Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. Production: Vercel env + external minute cron (Hobby is daily) + Resend domain. See §0 and §5 |
@@ -149,12 +145,11 @@ decision to be able to defend rather than an omission.
 - **GitHub (private):** https://github.com/AmitNeumann/firstseat
   - `main` — `origin/main` is `7857ff6`, the placeholder. This is what is deployed.
   - `feat/auth` — `b3d1d71`, now entirely contained in `feat/watches`.
-  - `feat/watches` — the working branch. Check `git status -sb`. Do not merge or push `main`.
+  - `feat/watches` — the working branch. Check `git status -sb`. Next: merge to `main`.
   - Open a PR at https://github.com/AmitNeumann/firstseat/pull/new/feat/watches
 - **Live site:** https://firstseat-lemon.vercel.app — ⚠️ still serving the placeholder,
-  because everything real is on a branch. Vercel also builds a **preview URL** for
-  `feat/watches`; that preview will 500 until the environment variables are added, which is
-  the safe place to find that out (see §0).
+  because everything real is on a branch. Vercel env vars and Supabase redirects are in
+  place; merging `feat/watches` is what flips this.
 - **Supabase:** project on the free plan, London region. Connection strings are in `.env.local`
   (never committed). The Postgres host is the Supabase connection pooler.
 
@@ -331,7 +326,9 @@ firstseat/
     │   ├── (auth)/          ← route group: adds a layout without adding a path segment
     │   │   ├── layout.tsx   ← site header + footer around the auth pages
     │   │   ├── login/page.tsx
-    │   │   └── signup/page.tsx
+    │   │   ├── signup/page.tsx
+    │   │   ├── forgot-password/page.tsx
+    │   │   └── reset-password/page.tsx
     │   ├── auth/confirm/route.ts   ← where the emailed confirmation link lands
     │   ├── auth/callback/route.ts  ← Google OAuth: exchange code, getUser(), ensureAppUser
     │   ├── api/watches/parse/route.ts ← POST: Gemini parse → proposal JSON (signed-in only)
@@ -356,6 +353,8 @@ firstseat/
     │   │   ├── google-button.tsx   ← Continue with Google + "or" divider
     │   │   ├── login-form.tsx
     │   │   ├── signup-form.tsx
+    │   │   ├── forgot-password-form.tsx
+    │   │   ├── reset-password-form.tsx
     │   │   └── sign-out-button.tsx
     │   ├── restaurants/            ← catalog, restaurant-card (typographic, no photo)
     │   ├── settings/               ← settings-card, profile-form
@@ -412,7 +411,7 @@ firstseat/
             ├── parse-limits.ts ← PARSE_MAX_CHARS (safe to import from the client)
             └── format.ts      ← display formatting, incl. dual-timezone phrasing, countdown, open-window
 
-tests/                       ← Vitest, 214 tests
+tests/                       ← Vitest, 220 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
 ├── seed-validation.test.ts  ← the hand-entered-data schema
@@ -468,6 +467,18 @@ Email/password is unchanged:
 ```
 
 `/login` with email takes the same last three steps via `signInWithPassword`.
+
+Password reset:
+
+```
+/forgot-password ──resetPasswordForEmail──▶ email with link
+                                    │  redirectTo: /auth/confirm?next=/reset-password
+                                    ▼
+       /auth/confirm ──exchangeCodeForSession──▶ recovery session
+                                    │
+                                    ▼
+                         /reset-password ──updateUser──▶ /dashboard
+```
 
 `requireAppUser()` is the gate for `/dashboard`, `/restaurants`, `/settings`,
 `/watches/new`, `/watches/[id]/edit`, and every Server Action that writes user data.
@@ -559,9 +570,11 @@ What was verified, rather than assumed:
 
 The temporary endpoint used for the database checks was deleted afterwards.
 
-**Not yet verified end to end:** the real email round trip. That needs a live inbox — sign
-up with your own address, open the link, and confirm you land on `/dashboard` with one row
-in `users` whose `id` matches the row in `auth.users`.
+**Password reset verified end to end** (27 Aug 2026): request on `/forgot-password` →
+Supabase email received → link to `/auth/confirm?next=/reset-password` → new password on
+`/reset-password` → signed in. Messaging is enumeration-safe (same "Check your email…"
+whether the address has an account). Signup confirmation's live-inbox round trip is still
+worth a one-time check on production after merge.
 
 Known limitations, worth mentioning before someone finds them for you:
 
@@ -571,8 +584,10 @@ Known limitations, worth mentioning before someone finds them for you:
   sign-in hits a unique-constraint violation (Prisma `P2002`) and 500s. Rare, but the fix is
   to catch `P2002` there and fall back to the existing row. Not done yet because it is
   untested code on a path we cannot easily reproduce.
-- **No password reset or email-change flow.** Supabase supports both, and `/auth/confirm`
-  already handles the `recovery` and `email_change` link types, but there is no UI.
+- **No email-change flow.** Password reset is in the product (`/forgot-password` →
+  `/auth/confirm?next=/reset-password` → `/reset-password`). Changing the account email
+  still has no UI; `/auth/confirm` already handles the `email_change` link type if we add
+  one later.
 - **No rate limiting of our own.** Signup and login lean on Supabase's built-in limits.
 
 ### Built: watches — the actual product
@@ -707,11 +722,15 @@ signed-in create-watch only. Do not "fix" this by calling `/api/watches/parse`.
 **Sign in / Sign up — designed**
 
 Two-column layout (pitch left, form right), honey benefits panel, timezone row on signup
-showing the browser's IANA zone. **Continue with Google** sits above an **or** divider,
-then the original email/password form. Same Server Actions, same Zod, same
+showing the browser's IANA zone. The original email/password form sits first, then an
+**or** divider, then **Continue with Google**. Same Server Actions, same Zod, same
 `requireAppUser`. Passwords still never touch a Client Component except as a form field.
 Google OAuth is `signInWithOAuth` on the server; `/auth/callback` exchanges the code and
-calls `getUser()` then `ensureAppUser`.
+calls `getUser()` then `ensureAppUser`. **Forgot password?** under the login password field
+goes to `/forgot-password`; `resetPasswordForEmail` emails a link to
+`/auth/confirm?next=/reset-password`; the diner chooses a new password on `/reset-password`
+and lands signed in on My Watches. Same success copy whether the address is registered.
+Verified end-to-end locally (email received, password updated, signed in).
 
 Signup copy (do not "improve" back to older wording without asking):
 
@@ -724,7 +743,7 @@ on first create. Names can still be edited later in Settings. There is still **n
 start watching Minetta" pending banner**; that only makes sense once a pending watch is
 actually saved, which belongs with the create-watch screen.
 
-Directly under **Create account**, a small muted line: **By continuing, you agree to our
+Below **Continue with Google**, a small muted line: **By continuing, you agree to our
 Terms and Privacy Policy.** Clay links to `/terms` and `/privacy`. It is a `div` passed
 as `belowForm` on `AuthFrame`, not a `<p>` inside the form — `globals.css` sets
 `text-wrap: pretty` on every `p`, which can collapse a short paragraph in this flex card
@@ -929,10 +948,10 @@ parser so signed-out visitors never spend Gemini quota.
 
 ### 🔜 Then: merge `feat/watches` to `main`
 
-**Not yet.** Follow §0 in order: **all** Vercel env vars (§7), then Supabase production
-redirects, **then** merge. Merging deploys. Do **not** merge or push `main` until steps
-1–2 are done. Work stays on `feat/watches`. After the live site is verified: external
-minute cron, Resend domain, then the six documents + presentation (§8).
+**This is the next step.** Vercel env vars and Supabase production redirects are **done**.
+Merge `feat/watches` → `main` and push `main` (that deploys). Then check live Prisma
+migrations and verify the site. After that: external minute cron, Resend domain, then the
+six documents + presentation (§8).
 
 ---
 
@@ -953,18 +972,12 @@ Every Supabase + Next.js tutorial you will find still says `middleware.ts`. The 
 refresh lives in `src/proxy.ts`; a build lists it as `ƒ Proxy (Middleware)`. There is a
 codemod (`npx @next/codemod@canary middleware-to-proxy .`) if you ever paste in old code.
 
-**🔴 The env vars may still not be on Vercel, and this blocks merging `feat/watches`.**
-Whether they were ever added has not been verified — check the dashboard. It used to be
-harmless because nothing touched Supabase. It no longer is: `src/proxy.ts` runs on nearly
-every request and throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are missing, so deploying
-without them returns 500 for **the whole site**, not just the pages that use the database.
-Add **every** variable in §7 under **Vercel → Project Settings → Environment Variables**
-*before* merging to `main`.
-
-**🟠 Set the Supabase redirect allow-list too.** Supabase only redirects to URLs on its own
-allow-list. Add `https://firstseat-lemon.vercel.app/**` and `http://localhost:3000/**` under
-**Supabase → Authentication → URL Configuration**, or confirmation links will bounce to the
-Site URL instead of `/auth/confirm`, and Google OAuth will not return to `/auth/callback`.
+**✅ Vercel env vars and Supabase redirects are in place.** They were the merge blockers;
+do not skip them on a future project. `src/proxy.ts` still throws if the two
+`NEXT_PUBLIC_SUPABASE_*` vars are missing, which 500s the **whole site**. Keep every
+variable in §7 on Vercel. Redirect allow-list: `https://firstseat-lemon.vercel.app/**` and
+`http://localhost:3000/**` under **Supabase → Authentication → URL Configuration**
+(confirmation, password reset, and Google OAuth).
 
 **🔴 Prisma 7 requires a driver adapter.** `new PrismaClient()` with no arguments — as shown in
 every Prisma 5/6 tutorial — will fail. v7 removed the bundled Rust query engine. You must pass
@@ -1149,12 +1162,12 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 | # | Deliverable | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder. **Next:** env vars + Supabase redirects, then merge `feat/watches` → `main` (§0) |
+| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder. **Next:** merge `feat/watches` → `main`, check live migrations, verify (§0). Env vars and Supabase redirects are done. |
 | 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders before submitting) |
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **214 unit tests over 11 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, and Google name / OAuth error mapping. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 6 | Test code | 🟡 **Partly** | Vitest installed; **220 unit tests over 11 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, Google name / OAuth error mapping, and password-reset schemas. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and the parse endpoint's 30/user/day in-memory rate limit |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
@@ -1164,11 +1177,13 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
-- **Working product features.** Built and verified locally on `feat/watches`: email +
-  Google auth, watches, catalog, Settings, Terms/Privacy, Gemini Describe it, Resend
-  alert mailer + cron route. **Not yet in production.** Deploy order is §0 (Vercel env
-  vars and Supabase redirects **before** merge; then external minute cron; then Resend
-  domain for non-owner inboxes).
+- **Working product features.** **Feature-complete** and verified locally on `feat/watches`:
+  email + Google auth (Google button below the email/password form), forgot-password
+  (Supabase `resetPasswordForEmail`, enumeration-safe copy, verified end-to-end), watches,
+  catalog, Settings, Terms/Privacy, Gemini Describe it, Resend alert mailer + cron route.
+  **Not yet in production.** Next: merge `feat/watches` → `main` (env vars and Supabase
+  redirects are done), check live migrations, verify the live site; then external minute
+  cron; then Resend domain for non-owner inboxes.
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -1183,7 +1198,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (214 tests)
+npm test                    # Vitest, single run (220 tests)
 npm run alerts:send-test    # send one [Preview] email; does not mark the alert SENT
 npm run test:watch          # Vitest in watch mode
 
@@ -1204,8 +1219,8 @@ git status -sb                                       # branch + tracking + dirty
 git add -A && git commit -m "message" && git push
 git log --oneline --graph --all -14                  # see how the branches sit
 
-# Merging to main — ONLY after Vercel env vars + Supabase redirects (§0). This deploys.
-# Merge feat/watches; it already contains feat/auth.
+# Merging to main — env vars + Supabase redirects are done (§0). This deploys.
+# Merge feat/watches; it already contains feat/auth. Then check live migrations.
 git checkout main && git merge --ff-only feat/watches && git push
 
 # Verification habits worth keeping
@@ -1221,9 +1236,9 @@ git check-ignore -v .env.local        # confirm secrets stay ignored
 - **Never put secrets in chat or in git.** Check `git diff --cached` before every commit.
   Only `.env.example` is tracked; `.env.local` is gitignored and **must never be committed**.
   `GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` are server-only — never `NEXT_PUBLIC_`.
-- **Do not merge or push `main` until §0 steps 1–2 are done.** Vercel deploys `main`.
-  Local `main` is one commit ahead of `origin/main` and must stay unpushed until every
-  env var in §7 is on Vercel. Work stays on `feat/watches` until then.
+- **Next step is merge `feat/watches` → `main`.** Vercel env vars and Supabase redirects
+  are done. Do **not** push the old local-`main`-only auth commit; merge `feat/watches`.
+  Then check live Prisma migrations and verify the site.
 - **Keep working:** auth (`getUser()` / `requireAppUser()`), `computeDropMoment`, the
   create-watch ARIA combobox, and the dual-timezone display.
 - **Prefer being able to explain a decision over adding a feature.** That is what the brief grades.

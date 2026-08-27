@@ -36,9 +36,6 @@ export function SignupForm() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <GoogleSignInButton />
-      <AuthOrDivider />
-
       <form action={submit} className="flex flex-col gap-3.5">
         {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
 
@@ -89,6 +86,9 @@ export function SignupForm() {
           Create account
         </SubmitButton>
       </form>
+
+      <AuthOrDivider />
+      <GoogleSignInButton />
     </div>
   );
 }

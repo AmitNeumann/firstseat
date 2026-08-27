@@ -8,7 +8,9 @@ import { ensureAppUser, requireAppUser } from "@/lib/auth/dal";
 import { OAUTH_TZ_COOKIE } from "@/lib/auth/oauth-timezone";
 import {
   DEFAULT_TIMEZONE,
+  ForgotPasswordSchema,
   LoginSchema,
+  ResetPasswordSchema,
   SignupSchema,
   UpdateSettingsSchema,
   type AuthFormState,
@@ -172,6 +174,94 @@ export async function signInWithGoogle(
   }
 
   redirect(data.url);
+}
+
+/**
+ * Sends a password-reset email. The message is the same whether the address has an
+ * account, so this form cannot be used to discover who is registered.
+ */
+export async function requestPasswordReset(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const submittedEmail = field(formData, "email") ?? "";
+
+  const parsed = ForgotPasswordSchema.safeParse({
+    email: field(formData, "email"),
+  });
+
+  if (!parsed.success) {
+    return {
+      errors: z.flattenError(parsed.error).fieldErrors,
+      email: submittedEmail,
+    };
+  }
+
+  const { email } = parsed.data;
+  const supabase = await createSupabaseServerClient();
+  const origin = await getSiteOrigin();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=/reset-password`,
+  });
+
+  if (error) {
+    console.error("[auth] resetPasswordForEmail failed:", error);
+
+    if (error.code === "over_email_send_rate_limit" || error.status === 429) {
+      return {
+        message: "Please wait a moment and try again.",
+        email,
+      };
+    }
+  }
+
+  return {
+    notice: "Check your email for a reset link.",
+  };
+}
+
+/**
+ * Writes a new password for the recovery session established by `/auth/confirm`.
+ * The diner is already signed in after exchanging the link, so they land on My Watches.
+ */
+export async function updatePassword(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = ResetPasswordSchema.safeParse({
+    password: field(formData, "password"),
+    confirmPassword: field(formData, "confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      message: "That reset link has expired. Request a new one.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    console.error("[auth] updateUser password failed:", error);
+    return {
+      message: "We could not update that password. Try the reset link again.",
+    };
+  }
+
+  await ensureAppUser(user);
+  redirect("/dashboard");
 }
 
 export async function logout(): Promise<void> {

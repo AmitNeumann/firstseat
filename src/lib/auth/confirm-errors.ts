@@ -16,6 +16,11 @@ export const CONFIRM_ERRORS = {
   oauth_denied: "Google sign-in was cancelled. You can try again or use email.",
   oauth_failed:
     "Google sign-in did not complete. Try again, or use email and password.",
+  reset_expired:
+    "That reset link has expired. Request a new one.",
+  reset_invalid: "That reset link is not valid. Request a new one.",
+  reset_mismatch:
+    "That link was opened in a different browser from the one you started in. Request a new reset link.",
 } as const;
 
 export type ConfirmErrorKey = keyof typeof CONFIRM_ERRORS;

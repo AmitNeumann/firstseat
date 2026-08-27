@@ -66,12 +66,17 @@ describe("safeNextPath", () => {
   it("allows a same-site path", () => {
     expect(safeNextPath("/settings")).toBe("/settings");
   });
+
+  it("allows the password-reset landing path", () => {
+    expect(safeNextPath("/reset-password")).toBe("/reset-password");
+  });
 });
 
 describe("confirmErrorMessage", () => {
   it("maps Google OAuth failures without echoing the query string", () => {
     expect(confirmErrorMessage("oauth_denied")).toContain("cancelled");
     expect(confirmErrorMessage("oauth_failed")).toContain("did not complete");
+    expect(confirmErrorMessage("reset_expired")).toContain("expired");
     expect(confirmErrorMessage("<script>")).toContain("could not confirm");
   });
 });

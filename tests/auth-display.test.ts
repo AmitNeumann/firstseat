@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { avatarInitials, displayFullName, greetingFirstName } from "@/lib/auth/display";
-import { SignupSchema, UpdateNameSchema } from "@/lib/auth/schemas";
+import { ForgotPasswordSchema, ResetPasswordSchema, SignupSchema, UpdateNameSchema } from "@/lib/auth/schemas";
 
 describe("avatarInitials", () => {
   it("uses first and last initials when both names are set", () => {
@@ -120,5 +120,49 @@ describe("SignupSchema names", () => {
     expect(parsed.success).toBe(true);
     expect(parsed.success && parsed.data.firstName).toBeNull();
     expect(parsed.success && parsed.data.lastName).toBeNull();
+  });
+});
+
+describe("ForgotPasswordSchema", () => {
+  it("rejects an invalid email", () => {
+    expect(ForgotPasswordSchema.safeParse({ email: "not-an-email" }).success).toBe(
+      false,
+    );
+  });
+
+  it("accepts a trimmed address", () => {
+    const parsed = ForgotPasswordSchema.safeParse({ email: "  Amit@Example.com " });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.email).toBe("amit@example.com");
+  });
+});
+
+describe("ResetPasswordSchema", () => {
+  it("requires the two passwords to match", () => {
+    const parsed = ResetPasswordSchema.safeParse({
+      password: "longenough",
+      confirmPassword: "different1",
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects a password shorter than 8 characters", () => {
+    const parsed = ResetPasswordSchema.safeParse({
+      password: "short",
+      confirmPassword: "short",
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("accepts a matching password", () => {
+    const parsed = ResetPasswordSchema.safeParse({
+      password: "longenough",
+      confirmPassword: "longenough",
+    });
+
+    expect(parsed.success).toBe(true);
   });
 });

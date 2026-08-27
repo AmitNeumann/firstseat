@@ -2,11 +2,12 @@ import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
 
 /**
- * Shared frame for the signup and login pages.
+ * Shared frame for the signed-out auth pages.
  *
  * A route group, so `(auth)` adds this layout without becoming a path segment: the pages
- * below it stay at `/login` and `/signup`. Header and footer match the rest of the
- * signed-out app; each page fills in the two-column pitch + form.
+ * below it stay at `/login`, `/signup`, `/forgot-password`, and `/reset-password`.
+ * Header and footer match the rest of the signed-out app; each page fills in the
+ * two-column pitch + form.
  */
 export default function AuthLayout({
   children,
