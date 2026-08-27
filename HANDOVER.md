@@ -3,7 +3,7 @@
 This document is the single source of truth for continuing work on FirstSeat. It assumes
 zero prior context. Read it top to bottom before making changes.
 
-**Last updated:** 26 August 2026
+**Last updated:** 27 August 2026
 **Course deadline:** 6 September 2026
 **Course brief:** `~/Desktop/fullstack project.docx` (RUNI CS 2026, "Become a Full-Stack Engineer")
 
@@ -15,17 +15,49 @@ zero prior context. Read it top to bottom before making changes.
 | --- | --- |
 | **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Check `git log -5 --oneline` rather than trusting a hash here. |
 | **Working tree** | check `git status -sb`. |
-| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview script verified; cron route ready, production cron needs a deploy) |
+| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview verified locally; production needs deploy + external minute cron + Resend domain — §0) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
-| **What does not exist yet** | production cron (needs a deploy of `feat/watches` + `RESEND_API_KEY` / `CRON_SECRET` on Vercel), merge to `main` (env vars + Supabase redirects first), most course documents + presentation (§8) |
+| **What does not exist yet** | **production deploy** of `feat/watches` (Vercel env vars + Supabase redirects **before** merge — §0), minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), Resend domain so alerts can reach any inbox, most course documents + presentation (§8) |
 | **Tests** | Vitest, 11 files, **214 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — returns 200 but still serves the **"coming soon" placeholder**. Verified, not assumed |
 
 ### What's left, in this order
 
-1. **Confirm the preview email arrived** — `npm run alerts:send-test` already sent one (L'Artusi, `[Preview]` subject) via Resend's test domain. Check the inbox of the signed-in user. Production auto-send still needs a deploy of `feat/watches` plus `RESEND_API_KEY` and `CRON_SECRET` on Vercel. See §5.
-2. **Merge `feat/watches` to `main`** — only after (a) the four database/auth env vars are on Vercel and (b) Supabase redirect URLs are set. Merging deploys. Add `GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` on Vercel too. Do **not** push `main` until then.
-3. **The six required documents + the presentation** (§8): product spec, technical design, test spec, scale, security, architecture; then the 10–15 min presentation. `README.md` local-run rewrite sits with these.
+**Building is done.** Auth (email + Google), watches, drop-time calc, Gemini parse, Resend
+mailer, full design, Terms/Privacy all work locally on `feat/watches`. The next phase is
+**deploying to production**, which is a big, careful step: merging `feat/watches` to `main`
+auto-deploys on Vercel. **Do not merge until steps 1 and 2 are done**, or the live site
+500s on every request (`src/proxy.ts` throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are
+missing).
+
+1. **Add ALL environment variables to Vercel** (Production, and Preview if you use it) —
+   **before** merging. Exact names in §7. The seven the running app needs:
+   `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`.
+   Optional: `NEXT_PUBLIC_SITE_URL`. Server-only keys must **not** be prefixed
+   `NEXT_PUBLIC_`. **Never paste real values into git or chat.**
+2. **Add production redirect URLs in Supabase** (Authentication → URL Configuration) for
+   the live domain (`https://firstseat-lemon.vercel.app` and `https://firstseat-lemon.vercel.app/**`,
+   plus keep `http://localhost:3000/**`). Without this, email confirmation and **Google
+   OAuth** bounce to the wrong place after deploy.
+3. **Then merge `feat/watches` into `main` and push `main`.** That is what triggers the
+   Vercel production deploy. Merge `feat/watches` (it already contains `feat/auth`); do
+   **not** push the old local-`main`-only auth commit by itself. Apply any unapplied
+   Prisma migrations on the live database if needed (`image_url`, user names).
+4. **Verify the live site** — homepage, sign-in (email + Google), a watch, Describe it
+   parse, Settings. Confirm it is no longer the "coming soon" placeholder.
+5. **Set up an external free cron** (e.g. [cron-job.org](https://cron-job.org)) to
+   `GET` or `POST` `https://firstseat-lemon.vercel.app/api/cron/alerts` **every minute**,
+   header `Authorization: Bearer <CRON_SECRET>`. Vercel **Hobby** cron is at most **daily**,
+   which cannot deliver a 5-minute alert. `vercel.json` still asks for `* * * * *`; the
+   external ping is what actually makes alerts fire on time. The route 401s without the
+   secret.
+6. **Verify a domain in Resend** (or another sending approach) so alert mail can go to
+   **any** user. The current from-address `FirstSeat <onboarding@resend.dev>` only
+   delivers to the Resend account owner. Until a domain is verified, production alerts
+   still cannot reach arbitrary inboxes.
+7. **The six required documents + the presentation** (§8), including rewriting
+   `README.md` for local run.
 
 ### 🔴 The deployment picture, which is easy to misread
 
@@ -42,27 +74,25 @@ That local-`main` commit is a loose end. It is harmless while unpushed, but push
 by reflex would deploy auth **without** the Vercel environment variables, which is the one
 change that takes the whole site down rather than just one page.
 
-### 🔴 Two things must happen before anything is merged to `main`
+### 🔴 Do these before anything is merged to `main`
 
-1. **Add the four environment variables to Vercel** (§7 lists them). `src/proxy.ts` runs on
-   nearly every request and throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are missing, so
-   merging without them returns 500 for **the entire site**, not just database-backed pages.
-   Whether this has been done has **not been verified** — check the Vercel dashboard first.
-2. **Add the redirect allow-list entries in Supabase** (§6), or confirmation emails will send
-   people to the wrong URL.
+1. **Add every Vercel env var in §7** — not only the two `NEXT_PUBLIC_SUPABASE_*` keys.
+   Missing those two 500s the **entire site**. Missing `RESEND_API_KEY` / `CRON_SECRET`
+   only breaks alerts; missing `GEMINI_API_KEY` only breaks Describe it. Check the Vercel
+   dashboard; this has **not been verified**.
+2. **Add the redirect allow-list in Supabase** (step 2 above), or confirmation emails and
+   Google sign-in will send people to the wrong URL.
 
 Merging is a deliberate act: `main` auto-deploys. Work was pushed to branches precisely so
 the placeholder stayed up while the product was unfinished. When you do merge, merge
-`feat/watches` (it contains `feat/auth`), not both. Also apply the two newer migrations
-(`image_url`, user names) wherever the database is used.
+`feat/watches` (it contains `feat/auth`), not both.
 
 ### Still unverified
 
-- **The Vercel environment variables** (above) — the single blocker on a real deployment.
-- **The real email round trip** was never formally recorded. In practice signing in is
-  required to create a watch, and watches have been created against the live database, so
-  it almost certainly works; confirm it once and note it here rather than leaving it implied.
-- **Nothing is deployed**, so none of the watch feature has run anywhere but localhost.
+- **The Vercel environment variables** — the single blocker on a real deployment.
+- **Supabase production redirect URLs** for the live domain.
+- **Nothing of the real product is deployed**, so none of the watch feature has run
+  anywhere but localhost (Google sign-in and Resend preview were verified locally).
 
 ---
 
@@ -107,7 +137,7 @@ from manually tracking release schedules across several booking platforms.
 | Testing | Vitest 4.1.11 | ✅ 214 unit tests passing (11 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
-| Alert delivery | Resend + claim-then-send dispatch + Vercel cron route | ✅ built locally; preview send verified 26 Aug 2026. Production cron needs a deploy + Vercel env vars. See §5 |
+| Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. Production: Vercel env + external minute cron (Hobby is daily) + Resend domain. See §0 and §5 |
 | AI parse endpoint | Gemini (`GEMINI_API_KEY`, server-only) | ✅ create-watch Describe it only. Landing Try it is a **local** Minetta parser (no Gemini) |
 
 There is deliberately **no** UI component library, form library, date library or timezone
@@ -806,7 +836,7 @@ restaurants. Every Prisma read of user data stays scoped by `userId`.
 | Screen | Route | State |
 | --- | --- | --- |
 | Landing | `/` | ✅ designed (Minetta-only Try it: local parse, full `computeDropMoment` preview, year-roll if that window already opened; no Gemini) |
-| Signup / login | `/signup`, `/login` | ✅ designed (two-column; first/last name on signup; **By continuing…** Terms/Privacy line on signup only) |
+| Signup / login | `/signup`, `/login` | ✅ designed (two-column; Google + email; first/last name on signup; **By continuing…** Terms/Privacy line on signup only) |
 | Terms of Service | `/terms` | ✅ designed, public (`content/terms.md`) |
 | Privacy Policy | `/privacy` | ✅ designed, public (`content/privacy.md`) |
 | My Watches | `/dashboard` | ✅ designed (`Hi {name}! Your Watches` when named; avatar menu shows name + email; New watch on the page; live countdown; honey dual-timezone panel) |
@@ -851,12 +881,15 @@ written when the watch is created. The mailer **does not** call `computeDropMome
    domain only delivers to the account owner's address.
 
 **Secrets stay server-side.** `RESEND_API_KEY` and `CRON_SECRET` are never `NEXT_PUBLIC_`.
-Never commit `.env.local`. Add both on Vercel before production cron can send.
+Never commit `.env.local`. Add both on Vercel **before** merging (§0).
 
-Note the honest constraint for the demo: cron on the Vercel **Hobby** plan may run at most
-daily, which is far too coarse for a to-the-minute alert. `vercel.json` still asks for a
-minute-level job; if the project stays on Hobby, say so in the presentation rather than
-implying minute cron works.
+**Vercel Hobby cron is at most daily.** That cannot deliver a 5-minute alert. After
+deploy, ping `/api/cron/alerts` every minute from a free external cron (e.g. cron-job.org)
+with `Authorization: Bearer $CRON_SECRET`. Keep `vercel.json` as documentation of intent.
+
+**Resend test domain** (`onboarding@resend.dev`) only delivers to the account owner.
+Verify a sending domain in Resend (or switch from-address) before expecting alerts to
+reach arbitrary users.
 
 ### ✅ Built: the AI natural-language parse endpoint (complete)
 
@@ -896,12 +929,10 @@ parser so signed-out visitors never spend Gemini quota.
 
 ### 🔜 Then: merge `feat/watches` to `main`
 
-**Not yet.** Only after (1) the four database/auth env vars are on Vercel and (2) the
-Supabase redirect allow-list is set (§0). Merging deploys. Do **not** merge or push
-`main` until then. Work stays on `feat/watches`. Add `GEMINI_API_KEY` on Vercel before
-a production create-watch parse should work.
-
-After merge: the six required documents + the presentation (§8).
+**Not yet.** Follow §0 in order: **all** Vercel env vars (§7), then Supabase production
+redirects, **then** merge. Merging deploys. Do **not** merge or push `main` until steps
+1–2 are done. Work stays on `feat/watches`. After the live site is verified: external
+minute cron, Resend domain, then the six documents + presentation (§8).
 
 ---
 
@@ -926,9 +957,9 @@ codemod (`npx @next/codemod@canary middleware-to-proxy .`) if you ever paste in 
 Whether they were ever added has not been verified — check the dashboard. It used to be
 harmless because nothing touched Supabase. It no longer is: `src/proxy.ts` runs on nearly
 every request and throws if the two `NEXT_PUBLIC_SUPABASE_*` vars are missing, so deploying
-without them returns 500 for **the whole site**, not just the pages that use the database. Add
-all four under **Vercel → Project Settings → Environment Variables** *before* merging to
-`main`. `DIRECT_URL` is only needed there if migrations are run from CI.
+without them returns 500 for **the whole site**, not just the pages that use the database.
+Add **every** variable in §7 under **Vercel → Project Settings → Environment Variables**
+*before* merging to `main`.
 
 **🟠 Set the Supabase redirect allow-list too.** Supabase only redirects to URLs on its own
 allow-list. Add `https://firstseat-lemon.vercel.app/**` and `http://localhost:3000/**` under
@@ -1074,27 +1105,34 @@ npm run dev                  # http://localhost:3000
 
 ### Required environment variables
 
-All four database/auth vars plus `GEMINI_API_KEY` and `RESEND_API_KEY` live in `.env.local`,
-which is git-ignored. `.env.example` documents them with placeholders, plus a commented
-`CRON_SECRET` (optional locally; required on Vercel for the cron route). **Never commit real
-values; never paste them into a chat. `.env.local` must never be committed.**
+`.env.local` is git-ignored. `.env.example` documents placeholders. **Never commit real
+values; never paste them into a chat.**
 
-| Variable | Where to get it | Used by |
-| --- | --- | --- |
-| `DATABASE_URL` | Supabase → Connect → ORMs → Prisma (pooled, port **6543**) | App at runtime |
-| `DIRECT_URL` | Same panel (non-pooled, port **5432**) | Prisma CLI migrations |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Supabase Auth |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page (anon / publishable key) | Supabase Auth |
-| `GEMINI_API_KEY` | Google AI Studio → API keys | Create-watch parse route (server-only) |
-| `RESEND_API_KEY` | Resend → API Keys | Alert emails (server-only). **Already in local `.env.local` as of 26 Aug 2026.** |
-| `CRON_SECRET` | Generate a long random string | `/api/cron/alerts` Bearer check. Optional locally if you only use `alerts:send-test`. **Required in production.** |
+#### Add these to Vercel **before** merging to `main`
 
-`.env.example` also documents one optional variable, `NEXT_PUBLIC_SITE_URL`, commented out.
-It is normally unnecessary: the signup action reads the request's `Origin` header, which is
-already correct on localhost, previews and production alike.
+Same names as `.env.example` / `process.env` in the code. Put all of them on
+**Production** (and Preview if you use preview deploys).
 
-Add `GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` to Vercel before production parse
-/ email sending. All three are server-only, never `NEXT_PUBLIC_`.
+| Variable | Required on Vercel? | Where to get it | Used by |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | **Yes** — app runtime | Supabase → Connect → ORMs → Prisma (pooled, port **6543**) | `src/lib/prisma.ts` |
+| `DIRECT_URL` | **Yes** (same four Supabase vars as local; needed if you run Prisma CLI / migrate from CI) | Same panel, non-pooled, port **5432** | Prisma CLI (`prisma.config.ts`, seed, `alerts:send-test`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | **Yes** — missing 500s the whole site | Supabase → Project Settings → API | `src/lib/supabase/env.ts`, `src/proxy.ts` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Yes** — missing 500s the whole site | Same page (anon / publishable key) | Same. Safe to expose; do **not** use `service_role` |
+| `GEMINI_API_KEY` | **Yes** for Describe it | Google AI Studio → API keys | `src/lib/watches/parse-gemini.ts` (server-only) |
+| `RESEND_API_KEY` | **Yes** for alert email | Resend → API Keys | `src/lib/alerts/send.ts` (server-only) |
+| `CRON_SECRET` | **Yes** for `/api/cron/alerts` | Generate a long random string | `src/lib/alerts/cron-auth.ts`. Empty → 401 |
+
+`GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` must **never** be named `NEXT_PUBLIC_*`.
+
+#### Optional
+
+| Variable | Used by |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Fallback origin in `src/lib/site-origin.ts` when there is no `Origin` header. Usually omit: signup/OAuth read `Origin`. Example: `https://firstseat-lemon.vercel.app` |
+
+Vercel also injects `VERCEL_URL` (no protocol); the app may prefix `https://` if origin
+cannot be read from the request. `NODE_ENV` is set by the platform.
 
 The anon/publishable key is safe to expose to the browser by design. The **`service_role`
 key must never** be used in a `NEXT_PUBLIC_` variable — it bypasses RLS. It is not needed today.
@@ -1111,7 +1149,7 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 | # | Deliverable | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder — everything real is on `feat/watches`. Merging it (after §0) is what makes this deliverable real |
+| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder. **Next:** env vars + Supabase redirects, then merge `feat/watches` → `main` (§0) |
 | 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders before submitting) |
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
@@ -1126,12 +1164,11 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
-- **Working product features.** Authentication (email/password and Google OAuth), watches,
-  the catalog, Settings, Terms/Privacy, create-watch Describe it (Gemini parse →
-  confirmation card, then `createWatch`), and **alert email delivery** (Resend +
-  claim-then-send + local preview script + cron route) are built locally on
-  `feat/watches`. Production auto-send still needs a deploy plus `RESEND_API_KEY` and
-  `CRON_SECRET` on Vercel.
+- **Working product features.** Built and verified locally on `feat/watches`: email +
+  Google auth, watches, catalog, Settings, Terms/Privacy, Gemini Describe it, Resend
+  alert mailer + cron route. **Not yet in production.** Deploy order is §0 (Vercel env
+  vars and Supabase redirects **before** merge; then external minute cron; then Resend
+  domain for non-owner inboxes).
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -1167,7 +1204,7 @@ git status -sb                                       # branch + tracking + dirty
 git add -A && git commit -m "message" && git push
 git log --oneline --graph --all -14                  # see how the branches sit
 
-# Merging to main — ONLY after the two steps in §0. This deploys.
+# Merging to main — ONLY after Vercel env vars + Supabase redirects (§0). This deploys.
 # Merge feat/watches; it already contains feat/auth.
 git checkout main && git merge --ff-only feat/watches && git push
 
@@ -1184,9 +1221,9 @@ git check-ignore -v .env.local        # confirm secrets stay ignored
 - **Never put secrets in chat or in git.** Check `git diff --cached` before every commit.
   Only `.env.example` is tracked; `.env.local` is gitignored and **must never be committed**.
   `GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` are server-only — never `NEXT_PUBLIC_`.
-- **Do not merge or push `main`.** Vercel deploys `main`. Local `main` is one commit ahead
-  of `origin/main` and must stay unpushed until the four env vars are on Vercel (§0).
-  Work stays on `feat/watches`.
+- **Do not merge or push `main` until §0 steps 1–2 are done.** Vercel deploys `main`.
+  Local `main` is one commit ahead of `origin/main` and must stay unpushed until every
+  env var in §7 is on Vercel. Work stays on `feat/watches` until then.
 - **Keep working:** auth (`getUser()` / `requireAppUser()`), `computeDropMoment`, the
   create-watch ARIA combobox, and the dual-timezone display.
 - **Prefer being able to explain a decision over adding a feature.** That is what the brief grades.
