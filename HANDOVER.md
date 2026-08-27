@@ -13,38 +13,36 @@ zero prior context. Read it top to bottom before making changes.
 
 | | |
 | --- | --- |
-| **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Check `git log -5 --oneline` rather than trusting a hash here. |
+| **Current branch** | `feat/watches` and `main` both track production. Check `git log -5 --oneline` rather than trusting a hash here. |
 | **Working tree** | check `git status -sb`. |
 | **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, **Forgot password** (`/forgot-password` → email link → `/reset-password`), and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview verified locally; production needs deploy + external minute cron + Resend domain — §0) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
-| **What does not exist yet** | **production deploy** of `feat/watches` (Vercel env vars and Supabase redirects are **done**; remaining: merge → `main`, live DB migrations check, verify the live site — §0), minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), Resend domain so alerts can reach any inbox, most course documents + presentation (§8) |
+| **What does not exist yet** | minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), Resend domain so alerts can reach any inbox, most course documents + presentation (§8) |
 | **Tests** | Vitest, 11 files, **220 tests passing**. No component or end-to-end tests yet |
-| **Live site** | https://firstseat-lemon.vercel.app — returns 200 but still serves the **"coming soon" placeholder**. Verified, not assumed |
+| **Live site** | https://firstseat-lemon.vercel.app — **the real product**. Placeholder is gone. Verified 27 Aug 2026: email sign-in, Google sign-in, create a watch. |
 
 ### What's left, in this order
 
-**The app is feature-complete.** Auth (email + Google, with **Continue with Google** below
+**The app is feature-complete and on production.** Auth (email + Google, with **Continue with Google** below
 the email/password form; **forgot-password** via Supabase `resetPasswordForEmail`,
 enumeration-safe "Check your email for a reset link.", `/forgot-password` and
 `/reset-password`, verified end-to-end: reset email received, new password set, signed in),
-watches, drop-time calc, Gemini parse, Resend mailer, full design, Terms/Privacy all work
-on `feat/watches`.
+watches, drop-time calc, Gemini parse, Resend mailer, full design, Terms/Privacy.
 
-**`feat/watches` is merged to `main` (5cd281b).** The linked Supabase database already had
-all 5 Prisma migrations (`prisma migrate status` = up to date; `migrate diff` empty).
-**Do not run `prisma migrate deploy`.** The first Vercel production deploy **failed**
-because Hobby rejects `* * * * *` in `vercel.json`; the live URL still serves the
-placeholder until a follow-up commit with a daily cron deploys. Env vars and Supabase
-redirects were already in place.
+**`feat/watches` is merged to `main`.** Linked Supabase already had all 5 Prisma
+migrations — **do not run `prisma migrate deploy`.** First Vercel deploy of `5cd281b`
+failed: Hobby rejects `* * * * *`. Follow-up `50ed4f9` uses `0 4 * * *` and **deployed
+successfully**. Live URL is the real app. Verified in a browser 27 Aug 2026: email
+sign-in, Google sign-in, and creating a watch. Env vars and Supabase redirects were
+already in place.
 
 1. ~~Add ALL environment variables to Vercel~~ **Done.**
 2. ~~Add production redirect URLs in Supabase~~ **Done.** Covers email confirmation,
    **password reset** (`/auth/confirm?next=/reset-password`), and **Google OAuth**.
-3. ~~Merge `feat/watches` into `main` and push `main`~~ **Done** (`7857ff6..5cd281b`).
+3. ~~Merge `feat/watches` into `main` and push `main`~~ **Done** (`7857ff6..50ed4f9`).
    Live Prisma schema already matched; no migrate command.
-4. **Land a Hobby-legal cron and verify the live site** — homepage, sign-in (email +
-   Google), forgot-password, a watch, Describe it parse, Settings. Confirm it is no
-   longer the "coming soon" placeholder.
+4. ~~Verify the live site in a browser~~ **Done** (27 Aug 2026): email sign-in, Google
+   sign-in, create a watch.
 5. **Set up an external free cron** (e.g. [cron-job.org](https://cron-job.org)) to
    `GET` or `POST` `https://firstseat-lemon.vercel.app/api/cron/alerts` **every minute**,
    header `Authorization: Bearer <CRON_SECRET>`. Vercel **Hobby** cron is at most **daily**,
@@ -59,35 +57,17 @@ redirects were already in place.
 7. **The six required documents + the presentation** (§8), including rewriting
    `README.md` for local run.
 
-### 🔴 The deployment picture, which is easy to misread
-
-Three branches, and none of the real product is deployed:
+### 🟢 Production is `main` at 50ed4f9
 
 | Ref | Commit | Contains |
 | --- | --- | --- |
-| `origin/main` | `7857ff6` | placeholder + first handover. **This is what Vercel serves.** |
-| `main` (local) | `498c845` | ⚠️ 1 commit ahead of `origin/main`, **unpushed** — auth was fast-forwarded onto local `main` and never pushed |
+| `origin/main` | `50ed4f9` | the real product. **This is what Vercel serves.** |
+| `feat/watches` | `50ed4f9` | same commit; keep it for further work if needed |
 | `feat/auth` | `b3d1d71` | fully contained in `feat/watches`; nothing unique left on it |
-| `feat/watches` | working branch | everything: auth (email + Google OAuth + forgot-password), watches, seed, tests, design, landing Try it (local Minetta parser), My Watches, catalog, Settings, Terms / Privacy, create-watch Describe it (Gemini parse), Resend alert mailer + cron route |
 
-That local-`main` commit is a loose end. It is harmless while unpushed. Do **not** push
-it: merge `feat/watches` instead. Env vars are already on Vercel, so a mistaken push of
-that old auth-only commit would deploy an incomplete product rather than 500 the site.
+The old local-`main`-only auth commit is gone: `main` fast-forwarded through `feat/watches`.
 
-### Ready to merge
-
-1. ~~Vercel env vars in §7~~ **Done.**
-2. ~~Supabase redirect allow-list~~ **Done.**
-
-Merging is a deliberate act: `main` auto-deploys. Work was pushed to branches precisely so
-the placeholder stayed up while the product was unfinished. When you do merge, merge
-`feat/watches` (it contains `feat/auth`), not both.
-
-### Still unverified
-
-- **Nothing of the real product is deployed**, so none of the watch feature has run
-  anywhere but localhost (Google sign-in, password reset, and Resend preview were verified
-  locally). After merge: homepage, sign-in, forgot-password, a watch, Describe it, Settings.
+Production was verified in a browser on 27 Aug 2026 (email sign-in, Google, create a watch).
 
 ---
 
@@ -130,7 +110,7 @@ from manually tracking release schedules across several booking platforms.
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
 | UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
 | Testing | Vitest 4.1.11 | ✅ 220 unit tests passing (11 files); ❌ no component or E2E tests |
-| Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
+| Hosting | Vercel, auto-deploys on push to `main` | ✅ production serving the real app (`50ed4f9`) |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 | Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. Production: Vercel env + external minute cron (Hobby is daily) + Resend domain. See §0 and §5 |
 | AI parse endpoint | Gemini (`GEMINI_API_KEY`, server-only) | ✅ create-watch Describe it only. Landing Try it is a **local** Minetta parser (no Gemini) |
@@ -142,13 +122,11 @@ decision to be able to defend rather than an omission.
 ### Live locations
 
 - **GitHub (private):** https://github.com/AmitNeumann/firstseat
-  - `main` — `origin/main` is `7857ff6`, the placeholder. This is what is deployed.
+  - `main` — `origin/main` is `50ed4f9`, the real product. This is what is deployed.
   - `feat/auth` — `b3d1d71`, now entirely contained in `feat/watches`.
-  - `feat/watches` — the working branch. Check `git status -sb`. Next: merge to `main`.
+  - `feat/watches` — same product as `main`; use for further work if needed.
   - Open a PR at https://github.com/AmitNeumann/firstseat/pull/new/feat/watches
-- **Live site:** https://firstseat-lemon.vercel.app — ⚠️ still serving the placeholder,
-  because everything real is on a branch. Vercel env vars and Supabase redirects are in
-  place; merging `feat/watches` is what flips this.
+- **Live site:** https://firstseat-lemon.vercel.app — the real product (`50ed4f9`).
 - **Supabase:** project on the free plan, London region. Connection strings are in `.env.local`
   (never committed). The Postgres host is the Supabase connection pooler.
 
@@ -1164,7 +1142,7 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 | # | Deliverable | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Link to app on Vercel | 🟡 **Live, but stale** | https://firstseat-lemon.vercel.app still serves the placeholder. **Next:** merge `feat/watches` → `main`, check live migrations, verify (§0). Env vars and Supabase redirects are done. |
+| 1 | Link to app on Vercel | ✅ **Live** | https://firstseat-lemon.vercel.app serves the real product. Verified 27 Aug 2026: email + Google sign-in, create a watch. |
 | 2 | Link to GitHub repository | ✅ **Done** | https://github.com/AmitNeumann/firstseat (private — make public or add graders before submitting) |
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
@@ -1179,13 +1157,12 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
-- **Working product features.** **Feature-complete** and verified locally on `feat/watches`:
-  email + Google auth (Google button below the email/password form), forgot-password
-  (Supabase `resetPasswordForEmail`, enumeration-safe copy, verified end-to-end), watches,
-  catalog, Settings, Terms/Privacy, Gemini Describe it, Resend alert mailer + cron route.
-  **Not yet in production.** Next: merge `feat/watches` → `main` (env vars and Supabase
-  redirects are done), check live migrations, verify the live site; then external minute
-  cron; then Resend domain for non-owner inboxes.
+- **Working product features.** **Feature-complete** and **in production**
+  (https://firstseat-lemon.vercel.app): email + Google auth (Google button below the
+  email/password form), forgot-password, watches, catalog, Settings, Terms/Privacy,
+  Gemini Describe it, Resend alert mailer + cron route. Verified 27 Aug 2026: email
+  sign-in, Google, create a watch. Next: external minute cron, then Resend domain for
+  non-owner inboxes.
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -1238,9 +1215,8 @@ git check-ignore -v .env.local        # confirm secrets stay ignored
 - **Never put secrets in chat or in git.** Check `git diff --cached` before every commit.
   Only `.env.example` is tracked; `.env.local` is gitignored and **must never be committed**.
   `GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` are server-only — never `NEXT_PUBLIC_`.
-- **Next step is merge `feat/watches` → `main`.** Vercel env vars and Supabase redirects
-  are done. Do **not** push the old local-`main`-only auth commit; merge `feat/watches`.
-  Then check live Prisma migrations and verify the site.
+- **Production is live.** Next: external minute cron for alerts, then Resend domain,
+  then the course documents (§8).
 - **Keep working:** auth (`getUser()` / `requireAppUser()`), `computeDropMoment`, the
   create-watch ARIA combobox, and the dual-timezone display.
 - **Prefer being able to explain a decision over adding a feature.** That is what the brief grades.
