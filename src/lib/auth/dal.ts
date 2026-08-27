@@ -4,9 +4,11 @@ import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { namesFromAuthMetadata } from "@/lib/auth/oauth-profile";
+import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
+import { isKnownTimezone } from "@/lib/time";
 
 /**
  * The application's own view of a signed-in user, read from the `users` table.
@@ -48,6 +50,7 @@ export const getAuthUser = cache(async (): Promise<SupabaseAuthUser | null> => {
  */
 export async function ensureAppUser(
   authUser: SupabaseAuthUser,
+  extras?: { timezone?: string },
 ): Promise<AppUser> {
   const email = authUser.email;
 
@@ -80,9 +83,10 @@ export async function ensureAppUser(
     });
   }
 
-  const timezone = readTimezone(authUser);
-  const firstName = readOptionalName(authUser.user_metadata?.firstName);
-  const lastName = readOptionalName(authUser.user_metadata?.lastName);
+  const timezone = readTimezone(authUser, extras?.timezone);
+  const { firstName, lastName } = namesFromAuthMetadata(
+    asMetadata(authUser.user_metadata),
+  );
 
   // An upsert rather than a create: the first sign-in can fan out into several
   // concurrent requests, and each of them would see no row here.
@@ -95,38 +99,30 @@ export async function ensureAppUser(
 }
 
 /**
- * The timezone captured by the signup form, stored on the Supabase user so it survives
- * the gap between signing up and confirming the email address.
+ * Timezone for a brand-new `users` row.
  *
- * `user_metadata` is user-controlled, so it is re-validated here rather than trusted.
+ * Email signup stores the browser zone on `user_metadata` so it survives confirmation.
+ * Google OAuth has no form, so the callback may pass the zone captured before the
+ * redirect. Junk values fall back to the column default (`Europe/London`).
  */
-function readTimezone(authUser: SupabaseAuthUser): string {
-  const candidate = authUser.user_metadata?.timezone;
-
-  if (typeof candidate !== "string" || candidate.length === 0) {
-    return DEFAULT_TIMEZONE;
-  }
-
-  try {
-    new Intl.DateTimeFormat("en-GB", { timeZone: candidate });
-    return candidate;
-  } catch {
-    return DEFAULT_TIMEZONE;
-  }
+function readTimezone(authUser: SupabaseAuthUser, fallback?: string): string {
+  return (
+    validTimezone(authUser.user_metadata?.timezone) ??
+    validTimezone(fallback) ??
+    DEFAULT_TIMEZONE
+  );
 }
 
-/**
- * Names captured at signup, stored on the Supabase user so they survive email confirmation.
- *
- * `user_metadata` is user-controlled, so length is re-checked here rather than trusted.
- */
-function readOptionalName(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
+function validTimezone(value: unknown): string | null {
+  return typeof value === "string" && isKnownTimezone(value) ? value : null;
+}
+
+function asMetadata(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return undefined;
   }
 
-  const trimmed = value.trim();
-  return trimmed.length > 0 && trimmed.length <= 40 ? trimmed : null;
+  return value as Record<string, unknown>;
 }
 
 /** The signed-in user's `users` row, or `null` when nobody is signed in. */

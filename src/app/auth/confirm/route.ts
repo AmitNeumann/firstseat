@@ -1,8 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 
 import type { ConfirmErrorKey } from "@/lib/auth/confirm-errors";
 import { ensureAppUser } from "@/lib/auth/dal";
+import { redirectNoStore, safeNextPath } from "@/lib/auth/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -71,33 +72,9 @@ export async function GET(request: NextRequest) {
   // that links them to application data.
   await ensureAppUser(result.data.user);
 
-  return redirectTo(request, safeNextPath(searchParams.get("next")));
+  return redirectNoStore(request, safeNextPath(searchParams.get("next")));
 }
 
-/**
- * Confines the post-confirmation redirect to this site.
- *
- * `next` arrives from a URL the recipient can edit, so without this a crafted
- * confirmation link could bounce a freshly signed-in user straight to an attacker's page.
- */
-function safeNextPath(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return value;
-}
-
-function failure(request: NextRequest, reason: ConfirmErrorKey): NextResponse {
-  return redirectTo(request, `/login?error=${reason}`);
-}
-
-function redirectTo(request: NextRequest, path: string): NextResponse {
-  const response = NextResponse.redirect(new URL(path, request.nextUrl.origin));
-
-  // This response can carry `Set-Cookie` headers for a session. Caching it anywhere
-  // shared would hand that session to whoever asked next.
-  response.headers.set("Cache-Control", "private, no-store");
-
-  return response;
+function failure(request: NextRequest, reason: ConfirmErrorKey) {
+  return redirectNoStore(request, `/login?error=${reason}`);
 }

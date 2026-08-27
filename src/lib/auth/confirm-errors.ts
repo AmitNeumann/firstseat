@@ -13,6 +13,9 @@ export const CONFIRM_ERRORS = {
     "That confirmation link has expired. Sign up again to get a new one.",
   link_mismatch:
     "That link was opened in a different browser from the one you signed up in. Open it in the original browser, or sign up again.",
+  oauth_denied: "Google sign-in was cancelled. You can try again or use email.",
+  oauth_failed:
+    "Google sign-in did not complete. Try again, or use email and password.",
 } as const;
 
 export type ConfirmErrorKey = keyof typeof CONFIRM_ERRORS;

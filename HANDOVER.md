@@ -15,10 +15,10 @@ zero prior context. Read it top to bottom before making changes.
 | --- | --- |
 | **Current branch** | `feat/watches` — tracks `origin/feat/watches`, not merged to `main`. Check `git log -5 --oneline` rather than trusting a hash here. |
 | **Working tree** | check `git status -sb`. |
-| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name** and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview script verified; cron route ready, production cron needs a deploy) |
+| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview script verified; cron route ready, production cron needs a deploy) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
 | **What does not exist yet** | production cron (needs a deploy of `feat/watches` + `RESEND_API_KEY` / `CRON_SECRET` on Vercel), merge to `main` (env vars + Supabase redirects first), most course documents + presentation (§8) |
-| **Tests** | Vitest, 10 files, **204 tests passing**. No component or end-to-end tests yet |
+| **Tests** | Vitest, 11 files, **214 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — returns 200 but still serves the **"coming soon" placeholder**. Verified, not assumed |
 
 ### What's left, in this order
@@ -36,7 +36,7 @@ Three branches, and none of the real product is deployed:
 | `origin/main` | `7857ff6` | placeholder + first handover. **This is what Vercel serves.** |
 | `main` (local) | `498c845` | ⚠️ 1 commit ahead of `origin/main`, **unpushed** — auth was fast-forwarded onto local `main` and never pushed |
 | `feat/auth` | `b3d1d71` | fully contained in `feat/watches`; nothing unique left on it |
-| `feat/watches` | working branch | everything: auth, watches, seed, tests, design, landing Try it (local Minetta parser), My Watches, catalog, Settings, Terms / Privacy, create-watch Describe it (Gemini parse), Resend alert mailer + cron route |
+| `feat/watches` | working branch | everything: auth (email + Google OAuth), watches, seed, tests, design, landing Try it (local Minetta parser), My Watches, catalog, Settings, Terms / Privacy, create-watch Describe it (Gemini parse), Resend alert mailer + cron route |
 
 That local-`main` commit is a loose end. It is harmless while unpushed, but pushing `main`
 by reflex would deploy auth **without** the Vercel environment variables, which is the one
@@ -101,10 +101,10 @@ from manually tracking release schedules across several booking platforms.
 | Validation | Zod 4.4.3 | ✅ auth forms, watch forms, Settings, the seed data, and Gemini parse JSON |
 | Database | Supabase Postgres (free plan, London / eu-west-2) | ✅ tables created, **5 migrations** applied locally |
 | ORM | Prisma 7.9.1 + `@prisma/adapter-pg` | ✅ connected and verified |
-| Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, `users` row on first sign-in |
+| Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, Google OAuth, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
 | UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
-| Testing | Vitest 4.1.11 | ✅ 204 unit tests passing (10 files); ❌ no component or E2E tests |
+| Testing | Vitest 4.1.11 | ✅ 214 unit tests passing (11 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | 🟡 live but serving the placeholder |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 | Alert delivery | Resend + claim-then-send dispatch + Vercel cron route | ✅ built locally; preview send verified 26 Aug 2026. Production cron needs a deploy + Vercel env vars. See §5 |
@@ -303,6 +303,7 @@ firstseat/
     │   │   ├── login/page.tsx
     │   │   └── signup/page.tsx
     │   ├── auth/confirm/route.ts   ← where the emailed confirmation link lands
+    │   ├── auth/callback/route.ts  ← Google OAuth: exchange code, getUser(), ensureAppUser
     │   ├── api/watches/parse/route.ts ← POST: Gemini parse → proposal JSON (signed-in only)
     │   ├── api/cron/alerts/route.ts   ← GET/POST: due alerts → Resend; Bearer `CRON_SECRET`
     │   ├── dashboard/page.tsx      ← protected; designed My Watches
@@ -319,7 +320,13 @@ firstseat/
     │   ├── forms/fields.tsx        ← FieldShell / SelectField / TextField / DateField / FormAlert / SubmitButton
     │   ├── site/                   ← logo, sticky header, account-menu, footer (FirstSeat · New York · Terms · Privacy)
     │   ├── landing/                ← Try it card, Minetta preview, feature-icon (speech / clock / bell)
-    │   ├── auth/                   ← auth-frame (optional belowForm for the signup agreement), form-fields, login-form, signup-form, sign-out-button
+    │   ├── auth/
+    │   │   ├── auth-frame.tsx
+    │   │   ├── form-fields.tsx
+    │   │   ├── google-button.tsx   ← Continue with Google + "or" divider
+    │   │   ├── login-form.tsx
+    │   │   ├── signup-form.tsx
+    │   │   └── sign-out-button.tsx
     │   ├── restaurants/            ← catalog, restaurant-card (typographic, no photo)
     │   ├── settings/               ← settings-card, profile-form
     │   ├── legal/                  ← LegalDocument: reads content/*.md, Fraunces title / Newsreader h2
@@ -350,10 +357,13 @@ firstseat/
         ├── time.ts          ← pure civil-date/time helpers + IANA timezone checks + listIanaTimezones
         ├── auth/
         │   ├── dal.ts       ← getAuthUser, ensureAppUser, getAppUser, requireAppUser
-        │   ├── actions.ts   ← "use server": signup, login, logout, updateSettings
+        │   ├── actions.ts   ← "use server": signup, login, signInWithGoogle, logout, updateSettings
         │   ├── schemas.ts   ← Zod schemas + AuthFormState + SettingsFormState
         │   ├── display.ts   ← avatarInitials, greetingFirstName, displayFullName (pure, tested)
-        │   └── confirm-errors.ts  ← fixed set of confirmation-failure messages
+        │   ├── oauth-profile.ts ← Google / signup names from user_metadata (pure, tested)
+        │   ├── oauth-timezone.ts ← short-lived cookie name for the Google redirect
+        │   ├── safe-redirect.ts ← same-site `next` clamp + no-store redirect
+        │   └── confirm-errors.ts  ← confirmation + Google OAuth failure messages
         ├── supabase/
         │   ├── env.ts       ← the two NEXT_PUBLIC_ vars, read and checked in one place
         │   ├── client.ts    ← Supabase client for Client Components (browser)
@@ -372,7 +382,7 @@ firstseat/
             ├── parse-limits.ts ← PARSE_MAX_CHARS (safe to import from the client)
             └── format.ts      ← display formatting, incl. dual-timezone phrasing, countdown, open-window
 
-tests/                       ← Vitest, 204 tests
+tests/                       ← Vitest, 214 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
 ├── seed-validation.test.ts  ← the hand-entered-data schema
@@ -382,10 +392,33 @@ tests/                       ← Vitest, 204 tests
 ├── timezone.test.ts         ← IANA list + UpdateTimezoneSchema
 ├── auth-display.test.ts     ← avatar initials, greeting, displayFullName, SignupSchema / UpdateNameSchema names
 ├── watch-parse.test.ts      ← restaurant resolve, untrusted JSON, rate limit
-└── alert-email.test.ts      ← email copy + HTML escape + cron Bearer check
+├── alert-email.test.ts      ← email copy + HTML escape + cron Bearer check
+└── oauth-profile.test.ts    ← Google name mapping, open-redirect clamp, OAuth login errors
 ```
 
 ### How a sign-in actually flows
+
+```
+/signup or /login ──Continue with Google──▶ signInWithGoogle()
+                                    │  (browser timezone cookie)
+                                    ▼
+                    supabase.auth.signInWithOAuth({ provider: "google" })
+                                    │
+                                    ▼
+                         Google account picker
+                                    │
+                                    ▼
+       /auth/callback ──exchangeCodeForSession──▶ getUser()
+                                    │
+                                    ▼
+                          ensureAppUser(authUser, { timezone })
+                        prisma users row, id = auth.users.id
+                                    │
+                                    ▼
+                              /dashboard
+```
+
+Email/password is unchanged:
 
 ```
 /signup  ──signup() action──▶ supabase.auth.signUp
@@ -404,7 +437,7 @@ tests/                       ← Vitest, 204 tests
                               /dashboard
 ```
 
-`/login` takes the same last three steps via `signInWithPassword`.
+`/login` with email takes the same last three steps via `signInWithPassword`.
 
 `requireAppUser()` is the gate for `/dashboard`, `/restaurants`, `/settings`,
 `/watches/new`, `/watches/[id]/edit`, and every Server Action that writes user data.
@@ -468,7 +501,7 @@ Signup, login, logout, and the `users` row on first sign-in. Specifically:
   `useActionState`, with every input re-validated server-side by Zod. Credentials never
   reach a Client Component.
 - **`ensureAppUser()`** in `src/lib/auth/dal.ts` is the single place `users.id` is set to
-  `auth.users.id`. It is called from `/auth/confirm` and from `login()`.
+  `auth.users.id`. It is called from `/auth/confirm`, `/auth/callback`, and `login()`.
 - **`requireAppUser()`** is the authorization gate, called by every signed-in page and
   every action that writes user data.
 
@@ -644,8 +677,11 @@ signed-in create-watch only. Do not "fix" this by calling `/api/watches/parse`.
 **Sign in / Sign up — designed**
 
 Two-column layout (pitch left, form right), honey benefits panel, timezone row on signup
-showing the browser's IANA zone. Same Server Actions, same Zod, same `requireAppUser`.
-Passwords still never touch a Client Component except as a form field.
+showing the browser's IANA zone. **Continue with Google** sits above an **or** divider,
+then the original email/password form. Same Server Actions, same Zod, same
+`requireAppUser`. Passwords still never touch a Client Component except as a form field.
+Google OAuth is `signInWithOAuth` on the server; `/auth/callback` exchanges the code and
+calls `getUser()` then `ensureAppUser`.
 
 Signup copy (do not "improve" back to older wording without asking):
 
@@ -897,7 +933,7 @@ all four under **Vercel → Project Settings → Environment Variables** *before
 **🟠 Set the Supabase redirect allow-list too.** Supabase only redirects to URLs on its own
 allow-list. Add `https://firstseat-lemon.vercel.app/**` and `http://localhost:3000/**` under
 **Supabase → Authentication → URL Configuration**, or confirmation links will bounce to the
-Site URL instead of `/auth/confirm`.
+Site URL instead of `/auth/confirm`, and Google OAuth will not return to `/auth/callback`.
 
 **🔴 Prisma 7 requires a driver adapter.** `new PrismaClient()` with no arguments — as shown in
 every Prisma 5/6 tutorial — will fail. v7 removed the bundled Rust query engine. You must pass
@@ -1080,7 +1116,7 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **204 unit tests over 10 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, and alert email copy + cron Bearer check. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 6 | Test code | 🟡 **Partly** | Vitest installed; **214 unit tests over 11 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, and Google name / OAuth error mapping. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and the parse endpoint's 30/user/day in-memory rate limit |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
@@ -1090,11 +1126,12 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 
 - **Architecture document** (§3 of the brief): components, pages, API routes/server actions,
   data flow between frontend/backend/database, roles and permissions, third-party services and why.
-- **Working product features.** Authentication, watches, the catalog, Settings,
-  Terms/Privacy, create-watch Describe it (Gemini parse → confirmation card, then
-  `createWatch`), and **alert email delivery** (Resend + claim-then-send + local preview
-  script + cron route) are built locally on `feat/watches`. Production auto-send still
-  needs a deploy plus `RESEND_API_KEY` and `CRON_SECRET` on Vercel.
+- **Working product features.** Authentication (email/password and Google OAuth), watches,
+  the catalog, Settings, Terms/Privacy, create-watch Describe it (Gemini parse →
+  confirmation card, then `createWatch`), and **alert email delivery** (Resend +
+  claim-then-send + local preview script + cron route) are built locally on
+  `feat/watches`. Production auto-send still needs a deploy plus `RESEND_API_KEY` and
+  `CRON_SECRET` on Vercel.
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -1109,7 +1146,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (204 tests)
+npm test                    # Vitest, single run (214 tests)
 npm run alerts:send-test    # send one [Preview] email; does not mark the alert SENT
 npm run test:watch          # Vitest in watch mode
 

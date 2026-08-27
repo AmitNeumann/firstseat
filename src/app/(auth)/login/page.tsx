@@ -21,8 +21,9 @@ export default async function LoginPage({
     redirect("/dashboard");
   }
 
-  // Set by `/auth/confirm` when a confirmation link could not be used. Resolved through a
-  // fixed map, so an unrecognised value shows generic copy rather than being echoed.
+  // Set by `/auth/confirm` or `/auth/callback` when a link or Google redirect could not
+  // be used. Resolved through a fixed map, so an unrecognised value shows generic copy
+  // rather than being echoed.
   const { error } = await searchParams;
   const notice = confirmErrorMessage(error);
 

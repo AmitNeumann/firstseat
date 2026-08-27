@@ -3,6 +3,7 @@
 import { useActionState, useSyncExternalStore } from "react";
 
 import { signup } from "@/lib/auth/actions";
+import { AuthOrDivider, GoogleSignInButton } from "@/components/auth/google-button";
 import { Field } from "@/components/auth/form-fields";
 import { FormAlert, SubmitButton, TextField } from "@/components/forms/fields";
 import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
@@ -34,56 +35,61 @@ export function SignupForm() {
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-3.5">
-      {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
+    <div className="flex flex-col gap-3.5">
+      <GoogleSignInButton />
+      <AuthOrDivider />
 
-      <div className="grid gap-3.5 sm:grid-cols-2">
-        <TextField
-          label="First name"
-          name="firstName"
-          defaultValue={state?.firstName ?? ""}
-          autoComplete="given-name"
-          placeholder="Amit"
-          errors={state?.errors?.firstName}
-          maxLength={40}
+      <form action={submit} className="flex flex-col gap-3.5">
+        {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
+
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          <TextField
+            label="First name"
+            name="firstName"
+            defaultValue={state?.firstName ?? ""}
+            autoComplete="given-name"
+            placeholder="Amit"
+            errors={state?.errors?.firstName}
+            maxLength={40}
+          />
+          <TextField
+            label="Last name"
+            name="lastName"
+            defaultValue={state?.lastName ?? ""}
+            autoComplete="family-name"
+            placeholder="Neumann"
+            errors={state?.errors?.lastName}
+            maxLength={40}
+          />
+        </div>
+
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          defaultValue={state?.email}
+          errors={state?.errors?.email}
         />
-        <TextField
-          label="Last name"
-          name="lastName"
-          defaultValue={state?.lastName ?? ""}
-          autoComplete="family-name"
-          placeholder="Neumann"
-          errors={state?.errors?.lastName}
-          maxLength={40}
+
+        <Field
+          label="Password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="••••••••"
+          hint="At least 8 characters."
+          errors={state?.errors?.password}
         />
-      </div>
 
-      <Field
-        label="Email"
-        name="email"
-        type="email"
-        autoComplete="email"
-        placeholder="you@example.com"
-        defaultValue={state?.email}
-        errors={state?.errors?.email}
-      />
+        <TimezoneRow />
 
-      <Field
-        label="Password"
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        placeholder="••••••••"
-        hint="At least 8 characters."
-        errors={state?.errors?.password}
-      />
-
-      <TimezoneRow />
-
-      <SubmitButton pending={pending} pendingLabel="Creating account…">
-        Create account
-      </SubmitButton>
-    </form>
+        <SubmitButton pending={pending} pendingLabel="Creating account…">
+          Create account
+        </SubmitButton>
+      </form>
+    </div>
   );
 }
 

@@ -1,10 +1,13 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import * as z from "zod";
 
 import { ensureAppUser, requireAppUser } from "@/lib/auth/dal";
+import { OAUTH_TZ_COOKIE } from "@/lib/auth/oauth-timezone";
 import {
+  DEFAULT_TIMEZONE,
   LoginSchema,
   SignupSchema,
   UpdateSettingsSchema,
@@ -15,6 +18,7 @@ import { field } from "@/lib/form-data";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/site-origin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isKnownTimezone } from "@/lib/time";
 
 export async function signup(
   _previousState: AuthFormState,
@@ -127,6 +131,47 @@ export async function login(
   await ensureAppUser(data.user);
 
   redirect("/dashboard");
+}
+
+/**
+ * Starts Google OAuth. The browser timezone is stored in a short-lived cookie so
+ * `/auth/callback` can apply it when creating the first `users` row — the same default
+ * email signup would have used. Names come from Google via `ensureAppUser`.
+ */
+export async function signInWithGoogle(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const submitted = field(formData, "timezone") ?? "";
+  const timezone = isKnownTimezone(submitted) ? submitted : DEFAULT_TIMEZONE;
+
+  const cookieStore = await cookies();
+  cookieStore.set(OAUTH_TZ_COOKIE, timezone, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 10 * 60,
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  const supabase = await createSupabaseServerClient();
+  const origin = await getSiteOrigin();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+      skipBrowserRedirect: true,
+    },
+  });
+
+  if (error || !data.url) {
+    console.error("[auth] Google OAuth could not start:", error);
+    return {
+      message: "Google sign-in is unavailable right now. Use email instead.",
+    };
+  }
+
+  redirect(data.url);
 }
 
 export async function logout(): Promise<void> {
