@@ -18,7 +18,7 @@ zero prior context. Read it top to bottom before making changes.
 | **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, **Forgot password** (`/forgot-password` → email link → `/reset-password`), and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone, **Delete your account**), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** from `FirstSeat <alerts@firstseat.xyz>` (preview verified locally; production still needs the external minute cron — §0) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
 | **What does not exist yet** | minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), most course documents + presentation (§8) |
-| **Tests** | Vitest, 12 files, **224 tests passing**. No component or end-to-end tests yet |
+| **Tests** | Vitest, 13 files, **227 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — **the real product**. Placeholder is gone. Verified 27 Aug 2026: email sign-in, Google sign-in, create a watch. |
 
 ### What's left, in this order
@@ -108,7 +108,7 @@ from manually tracking release schedules across several booking platforms.
 | Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, Google OAuth, forgot-password, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
 | UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
-| Testing | Vitest 4.1.11 | ✅ 224 unit tests passing (12 files); ❌ no component or E2E tests |
+| Testing | Vitest 4.1.11 | ✅ 227 unit tests passing (13 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | ✅ production serving the real app (`50ed4f9`) |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 | Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. From `FirstSeat <alerts@firstseat.xyz>`. Production still needs the external minute cron (Hobby is daily). See §0 and §5 |
@@ -312,16 +312,16 @@ firstseat/
     │   ├── dashboard/page.tsx      ← protected; designed My Watches
     │   ├── restaurants/page.tsx    ← protected; designed catalog ("The list")
     │   ├── settings/page.tsx       ← protected; one card (name, email, timezone)
-    │   ├── (legal)/                ← route group: public Terms / Privacy, signed-out chrome
+    │   ├── (legal)/                ← route group: public Terms / Privacy; signed-in visitors keep in-app nav
     │   │   ├── layout.tsx
     │   │   ├── terms/page.tsx      ← /terms
     │   │   └── privacy/page.tsx    ← /privacy
     │   └── watches/
-    │       ├── new/page.tsx        ← "Watch a table"; Describe it parses via Gemini into a confirmation card, then the original form
+    │       ├── new/page.tsx        ← "Watch a table"; Describe your reservation parses via Gemini into a confirmation card, then the original form
     │       └── [id]/edit/page.tsx  ← edit one; 404s for someone else's watch
     ├── components/
     │   ├── forms/fields.tsx        ← FieldShell / SelectField / TextField / DateField / FormAlert / SubmitButton
-    │   ├── site/                   ← logo, sticky header, account-menu, footer (FirstSeat · New York · Terms · Privacy)
+    │   ├── site/                   ← logo, sticky header, shell (sticky nav + footer at the bottom), account-menu, footer
     │   ├── landing/                ← Try it card, Minetta preview, feature-icon (speech / clock / bell)
     │   ├── auth/
     │   │   ├── auth-frame.tsx
@@ -337,7 +337,7 @@ firstseat/
     │   ├── legal/                  ← LegalDocument: reads content/*.md, Fraunces title / Newsreader h2
     │   └── watches/
     │       ├── create-watch-form.tsx   ← Client Component, useActionState; original fields + helper copy
-    │       ├── create-watch-composer.tsx ← Describe it + optional parse preview + form
+    │       ├── create-watch-composer.tsx ← Describe your reservation + optional parse preview + form
     │       ├── describe-it.tsx         ← sentence + Read it; does not create a watch
     │       ├── parse-preview.tsx       ← centered overlay; Create this watch via createWatch; Edit details fills the form
     │       ├── edit-watch-form.tsx
@@ -354,6 +354,7 @@ firstseat/
         ├── prisma.ts        ← Prisma client singleton; in dev, recreated after a schema reload (§6)
         ├── alerts/
         │   ├── email.ts     ← pure subject/text/HTML (tested; no Resend, no Prisma)
+        │   ├── welcome.ts   ← pure welcome email (tested); sent once on users-row create
         │   ├── send.ts      ← server-only Resend call; `RESEND_API_KEY`, never NEXT_PUBLIC
         │   ├── dispatch.ts  ← claim SCHEDULED → SENT, then send; revert on failure
         │   └── cron-auth.ts ← Bearer `CRON_SECRET` with timingSafeEqual
@@ -389,7 +390,7 @@ firstseat/
             ├── parse-limits.ts ← PARSE_MAX_CHARS (safe to import from the client)
             └── format.ts      ← display formatting, incl. dual-timezone phrasing, countdown, open-window
 
-tests/                       ← Vitest, 224 tests
+tests/                       ← Vitest, 227 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
 ├── date-status.test.ts      ← past dining date vs already-opened window
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
@@ -401,6 +402,7 @@ tests/                       ← Vitest, 224 tests
 ├── auth-display.test.ts     ← avatar initials, greeting, displayFullName, SignupSchema / UpdateNameSchema names
 ├── watch-parse.test.ts      ← restaurant resolve, untrusted JSON, rate limit
 ├── alert-email.test.ts      ← email copy + HTML escape + cron Bearer check
+├── welcome-email.test.ts    ← welcome copy + HTML escape
 └── oauth-profile.test.ts    ← Google name mapping, open-redirect clamp, OAuth login errors
 ```
 
@@ -800,7 +802,7 @@ The footer on every `SiteFooter` screen is one line:
 the original subtitle, the original bordered form card, original field labels (Restaurant,
 Date you want to eat, Party size, Meal), **Create watch**, and the helper
 "Restaurants release tables on their own local clock…". Above that card, on the **cream
-page background**, sits **Describe it** (`describe-it.tsx`) with **Read it** (Enter also
+page background**, sits **Describe your reservation** (`describe-it.tsx`) with **Read it** (Enter also
 submits). That calls `POST /api/watches/parse`. A match opens a centered **We understood**
 overlay (`parse-preview.tsx`, dimmed backdrop; X / click outside / Escape dismisses):
 summary line, **Create this watch** (posts hidden fields to `createWatch`), and **Edit
@@ -844,7 +846,7 @@ restaurants. Every Prisma read of user data stays scoped by `userId`.
 | My Watches | `/dashboard` | ✅ designed (`Hi {name}! Your Watches` when named; avatar menu shows name + email; New watch on the page; live countdown; honey dual-timezone panel) |
 | Restaurants catalog | `/restaurants` | ✅ designed (typographic cards; chips from real platforms; autocomplete combobox; **known minor issue:** filter-on-Enter is not fully working). Click → create watch |
 | Settings | `/settings` | ✅ designed (one profile card; red **Delete your account** link at the bottom) |
-| Create / edit watch | `/watches/new`, `/watches/[id]/edit` | ✅ original layout kept. Create-watch **Describe it** parses via Gemini into a confirmation card (`Create this watch` / `Edit details`). Live `DropPreview` is still on the form |
+| Create / edit watch | `/watches/new`, `/watches/[id]/edit` | ✅ original layout kept. Create-watch **Describe your reservation** parses via Gemini into a confirmation card (`Create this watch` / `Edit details`). Live `DropPreview` is still on the form |
 
 Guidance that still applies:
 
@@ -1151,7 +1153,7 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **224 unit tests over 12 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, Google name / OAuth error mapping, password-reset schemas, and past-date vs opened-window copy. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 6 | Test code | 🟡 **Partly** | Vitest installed; **227 unit tests over 13 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, welcome email copy, Google name / OAuth error mapping, password-reset schemas, and past-date vs opened-window copy. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and the parse endpoint's 30/user/day in-memory rate limit |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
@@ -1180,7 +1182,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (224 tests)
+npm test                    # Vitest, single run (227 tests)
 npm run alerts:send-test    # send one [Preview] email; does not mark the alert SENT
 npm run test:watch          # Vitest in watch mode
 

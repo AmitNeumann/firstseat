@@ -4,9 +4,11 @@ import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { sendWelcomeEmail } from "@/lib/alerts/send";
 import { namesFromAuthMetadata } from "@/lib/auth/oauth-profile";
 import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
 import { prisma } from "@/lib/prisma";
+import { getSiteOrigin } from "@/lib/site-origin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isKnownTimezone } from "@/lib/time";
 
@@ -46,7 +48,7 @@ export const getAuthUser = cache(async (): Promise<SupabaseAuthUser | null> => {
  *
  * `users.id` has no database default precisely so that it can be set to `auth.users.id`.
  * This function is the single place that link is made, and it is idempotent: calling it on
- * every sign-in is harmless.
+ * every sign-in is harmless. A brand-new row also triggers the one-time welcome email.
  */
 export async function ensureAppUser(
   authUser: SupabaseAuthUser,
@@ -88,14 +90,27 @@ export async function ensureAppUser(
     asMetadata(authUser.user_metadata),
   );
 
-  // An upsert rather than a create: the first sign-in can fan out into several
-  // concurrent requests, and each of them would see no row here.
-  return prisma.user.upsert({
-    where: { id: authUser.id },
-    create: { id: authUser.id, email, timezone, firstName, lastName },
-    update: {},
-    select,
-  });
+  try {
+    const created = await prisma.user.create({
+      data: { id: authUser.id, email, timezone, firstName, lastName },
+      select,
+    });
+    await deliverWelcome(created);
+    return created;
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      const raced = await prisma.user.findUnique({
+        where: { id: authUser.id },
+        select,
+      });
+
+      if (raced) {
+        return raced;
+      }
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -123,6 +138,31 @@ function asMetadata(value: unknown): Record<string, unknown> | undefined {
   }
 
   return value as Record<string, unknown>;
+}
+
+/**
+ * First-time welcome. Logged and swallowed: a mailer outage must not block sign-up.
+ * Cron and drop-alert dispatch never call this.
+ */
+async function deliverWelcome(user: AppUser): Promise<void> {
+  try {
+    await sendWelcomeEmail({
+      to: user.email,
+      firstName: user.firstName,
+      origin: await getSiteOrigin(),
+    });
+  } catch (error) {
+    console.error("[welcome] could not send welcome email:", error);
+  }
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  );
 }
 
 /** The signed-in user's `users` row, or `null` when nobody is signed in. */

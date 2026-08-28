@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 
 import { FeatureIcon } from "@/components/landing/feature-icon";
 import { LandingTryIt } from "@/components/landing/try-it-card";
-import { SiteFooter } from "@/components/site/footer";
-import { SiteHeader } from "@/components/site/header";
+import { SiteShell } from "@/components/site/shell";
 import { getAuthUser } from "@/lib/auth/dal";
 import { getLandingDemoRestaurant } from "@/lib/watches/queries";
 
@@ -18,9 +17,7 @@ export default async function Home() {
   const demoRestaurant = await getLandingDemoRestaurant();
 
   return (
-    <div className="flex min-h-full flex-col">
-      <SiteHeader signedIn={false} />
-
+    <SiteShell signedIn={false}>
       <main className="mx-auto flex w-full max-w-[1060px] flex-1 flex-col items-center gap-5 px-[clamp(16px,5vw,32px)] pt-[clamp(40px,8vw,86px)] pb-[72px] text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-clay">
           New York
@@ -42,7 +39,7 @@ export default async function Home() {
             <div className="flex items-center gap-3">
               <FeatureIcon name="table" className="size-7 shrink-0 text-clay" />
               <h2 className="font-serif text-[21px] font-medium tracking-[-0.02em] text-espresso">
-                Tell us the table
+                Just describe it
               </h2>
             </div>
             <p className="mt-2 text-[13.5px] text-muted">
@@ -75,8 +72,6 @@ export default async function Home() {
           </article>
         </section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </SiteShell>
   );
 }

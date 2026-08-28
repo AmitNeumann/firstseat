@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { Field } from "@/components/auth/form-fields";
+import { PasswordField } from "@/components/auth/form-fields";
 import { FormAlert, SubmitButton } from "@/components/forms/fields";
 import { updatePassword } from "@/lib/auth/actions";
 
@@ -13,20 +13,18 @@ export function ResetPasswordForm() {
     <form action={action} className="flex flex-col gap-3.5">
       {state?.message && <FormAlert tone="error">{state.message}</FormAlert>}
 
-      <Field
+      <PasswordField
         label="New password"
         name="password"
-        type="password"
         autoComplete="new-password"
         placeholder="••••••••"
         hint="At least 8 characters."
         errors={state?.errors?.password}
       />
 
-      <Field
+      <PasswordField
         label="Confirm password"
         name="confirmPassword"
-        type="password"
         autoComplete="new-password"
         placeholder="••••••••"
         errors={state?.errors?.confirmPassword}

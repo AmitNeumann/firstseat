@@ -1,5 +1,4 @@
-import { SiteFooter } from "@/components/site/footer";
-import { SiteHeader } from "@/components/site/header";
+import { SiteShell } from "@/components/site/shell";
 
 /**
  * Shared frame for the signed-out auth pages.
@@ -15,12 +14,10 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-full flex-col">
-      <SiteHeader signedIn={false} />
+    <SiteShell signedIn={false}>
       <main className="flex flex-1 flex-col justify-center px-[clamp(16px,5vw,32px)] py-10">
         {children}
       </main>
-      <SiteFooter />
-    </div>
+    </SiteShell>
   );
 }

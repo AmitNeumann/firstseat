@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SiteShell } from "@/components/site/shell";
 import { CreateWatchComposer } from "@/components/watches/create-watch-composer";
 import { requireAppUser } from "@/lib/auth/dal";
 import { addDays, civilDateInZone, formatCivilDate } from "@/lib/time";
@@ -36,7 +37,8 @@ export default async function NewWatchPage({
   const today = civilDateInZone(new Date(), user.timezone);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-10">
+    <SiteShell signedIn user={user}>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-10">
       <header>
         <Link
           href="/dashboard"
@@ -46,7 +48,7 @@ export default async function NewWatchPage({
         </Link>
         <h1 className="mt-6 text-xl font-semibold tracking-tight">Watch a table</h1>
         <p className="mt-1 text-sm text-muted">
-          Tell us the table you want. We know when each restaurant releases its bookings,
+          Describe what you want to book. We know when each restaurant releases its bookings,
           so we can tell you the exact moment to be ready.
         </p>
       </header>
@@ -68,6 +70,7 @@ export default async function NewWatchPage({
           initialRestaurantId={initialRestaurantId}
         />
       )}
-    </main>
+      </main>
+    </SiteShell>
   );
 }

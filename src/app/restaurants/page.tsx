@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
 import { RestaurantCatalog } from "@/components/restaurants/catalog";
-import { SiteFooter } from "@/components/site/footer";
-import { SiteHeader } from "@/components/site/header";
+import { SiteShell } from "@/components/site/shell";
 import { requireAppUser } from "@/lib/auth/dal";
 import { listRestaurantOptions } from "@/lib/watches/queries";
 
@@ -21,10 +20,9 @@ export default async function RestaurantsPage() {
   const user = await requireAppUser();
   const restaurants = await listRestaurantOptions();
 
+  // Chrome (sticky header + footer) comes from SiteShell — do not render SiteHeader here.
   return (
-    <div className="flex min-h-full flex-col">
-      <SiteHeader signedIn current="restaurants" user={user} />
-
+    <SiteShell signedIn current="restaurants" user={user}>
       <main
         className="mx-auto flex w-full max-w-[1020px] flex-1 flex-col gap-5
                    px-[clamp(14px,4vw,28px)] pt-[clamp(22px,5vw,40px)] pb-20"
@@ -49,8 +47,6 @@ export default async function RestaurantsPage() {
           <RestaurantCatalog restaurants={restaurants} />
         )}
       </main>
-
-      <SiteFooter />
-    </div>
+    </SiteShell>
   );
 }

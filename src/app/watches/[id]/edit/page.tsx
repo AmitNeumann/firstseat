@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SiteShell } from "@/components/site/shell";
 import { EditWatchForm } from "@/components/watches/edit-watch-form";
 import { requireAppUser } from "@/lib/auth/dal";
 import { addDays, civilDateInZone, formatCivilDate } from "@/lib/time";
@@ -39,7 +40,8 @@ export default async function EditWatchPage({
   const today = civilDateInZone(new Date(), user.timezone);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-10">
+    <SiteShell signedIn user={user}>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-10">
       <header className="space-y-1">
         <Link
           href="/dashboard"
@@ -61,6 +63,7 @@ export default async function EditWatchPage({
           timezone={user.timezone}
         />
       </section>
-    </main>
+      </main>
+    </SiteShell>
   );
 }

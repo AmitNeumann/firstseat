@@ -79,7 +79,7 @@ export function DescribeIt({
           htmlFor="describe-it"
           className="text-[11px] font-semibold uppercase tracking-[0.18em] text-clay"
         >
-          Describe it
+          Describe your reservation
         </label>
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
           <input

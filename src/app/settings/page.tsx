@@ -4,8 +4,7 @@ import { FormAlert } from "@/components/forms/fields";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { SettingsCard } from "@/components/settings/settings-card";
-import { SiteFooter } from "@/components/site/footer";
-import { SiteHeader } from "@/components/site/header";
+import { SiteShell } from "@/components/site/shell";
 import { requireAppUser } from "@/lib/auth/dal";
 import { listIanaTimezones } from "@/lib/time";
 
@@ -26,9 +25,7 @@ export default async function SettingsPage({
     : [user.timezone, ...timezones];
 
   return (
-    <div className="flex min-h-full flex-col">
-      <SiteHeader signedIn user={user} />
-
+    <SiteShell signedIn user={user}>
       <main
         className="mx-auto flex w-full max-w-[540px] flex-1 flex-col gap-5
                    px-[clamp(14px,4vw,28px)] pt-[clamp(22px,5vw,40px)] pb-20"
@@ -58,8 +55,6 @@ export default async function SettingsPage({
           <DeleteAccount />
         </SettingsCard>
       </main>
-
-      <SiteFooter />
-    </div>
+    </SiteShell>
   );
 }

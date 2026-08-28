@@ -2,10 +2,11 @@
  * Send one preview of the drop-alert email without marking any alert as SENT.
  *
  *   npm run alerts:send-test
+ *   npm run alerts:send-test -- you@example.com
  *
- * Uses the most recent scheduled watch in the database (the diner's real restaurant,
- * date, and booking link) so the inbox message looks like production. Resend's test
- * domain only delivers to the account owner's address.
+ * Uses the most recent scheduled watch (optionally for that email) so the inbox
+ * message looks like production. Pass an email so this cannot land in someone else's
+ * inbox. Sends from `ALERT_FROM` (`FirstSeat <alerts@firstseat.xyz>`).
  *
  * This does not wait for `alertAt`. Cron is what respects that clock; this only proves
  * the mailer can deliver.
@@ -35,12 +36,18 @@ if (!apiKey) {
 }
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+const toFilter = process.argv[2]?.trim().toLowerCase();
 
 async function main() {
   const alert = await prisma.dropAlert.findFirst({
     where: {
       status: DropAlertStatus.SCHEDULED,
-      watch: { status: WatchStatus.ACTIVE },
+      watch: {
+        status: WatchStatus.ACTIVE,
+        ...(toFilter
+          ? { user: { email: { equals: toFilter, mode: "insensitive" } } }
+          : {}),
+      },
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -57,7 +64,18 @@ async function main() {
   });
 
   if (!alert) {
-    console.error("No scheduled watch found. Create a watch while signed in, then run this again.");
+    if (toFilter) {
+      console.error(`No scheduled watch found for ${toFilter}. Sign in as that user, create a watch, then run this again.`);
+    } else {
+      console.error("No scheduled watch found. Create a watch while signed in, then run this again.");
+    }
+    process.exit(1);
+  }
+
+  const to = alert.watch.user.email;
+
+  if (toFilter && to.toLowerCase() !== toFilter) {
+    console.error(`Refusing to send: watch owner is ${to}, expected ${toFilter}.`);
     process.exit(1);
   }
 
@@ -75,7 +93,7 @@ async function main() {
 
   const result = await new Resend(apiKey).emails.send({
     from: ALERT_FROM,
-    to: alert.watch.user.email,
+    to,
     subject: `[Preview] ${content.subject}`,
     text: content.text,
     html: content.html,
@@ -86,7 +104,8 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Preview sent to ${alert.watch.user.email}.`);
+  console.log(`From: ${ALERT_FROM}`);
+  console.log(`Preview sent to ${to}.`);
   console.log(`Restaurant: ${alert.watch.restaurant.name}.`);
   console.log("The drop_alert row was left SCHEDULED — this was only a delivery check.");
 }

@@ -9,7 +9,7 @@ import type { RestaurantOption } from "@/lib/watches/options";
 import type { WatchProposal } from "@/lib/watches/parse";
 
 /**
- * Create-watch page body: Describe it, an optional confirmation card, then the manual form.
+ * Create-watch page body: Describe your reservation, an optional confirmation card, then the manual form.
  *
  * A successful parse shows a one-click confirmation overlay. Edit details remounts the
  * form with those values. The form still submits to `createWatch` on its own.

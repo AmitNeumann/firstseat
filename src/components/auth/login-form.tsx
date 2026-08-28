@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { login } from "@/lib/auth/actions";
 import { AuthOrDivider, GoogleSignInButton } from "@/components/auth/google-button";
-import { Field } from "@/components/auth/form-fields";
+import { Field, PasswordField } from "@/components/auth/form-fields";
 import { FormAlert, SubmitButton } from "@/components/forms/fields";
 
 export function LoginForm({ notice }: { notice?: string }) {
@@ -27,10 +27,9 @@ export function LoginForm({ notice }: { notice?: string }) {
           errors={state?.errors?.email}
         />
 
-        <Field
+        <PasswordField
           label="Password"
           name="password"
-          type="password"
           autoComplete="current-password"
           placeholder="••••••••"
           errors={state?.errors?.password}

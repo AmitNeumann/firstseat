@@ -39,9 +39,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${newsreader.variable} ${manrope.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${newsreader.variable} ${manrope.variable} h-full min-h-dvh antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-dvh flex-col">{children}</body>
     </html>
   );
 }

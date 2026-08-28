@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import { SiteFooter } from "@/components/site/footer";
-import { SiteHeader } from "@/components/site/header";
+import { SiteShell } from "@/components/site/shell";
 import type { DashboardWatch } from "@/components/watches/watch-card";
 import { WatchList } from "@/components/watches/watch-list";
 import { requireAppUser } from "@/lib/auth/dal";
@@ -23,9 +22,7 @@ export default async function DashboardPage() {
   const watches = await listWatchesForUser(user.id);
 
   return (
-    <div className="flex min-h-full flex-col">
-      <SiteHeader signedIn current="watches" user={user} />
-
+    <SiteShell signedIn current="watches" user={user}>
       <main
         className="mx-auto flex w-full max-w-[900px] flex-1 flex-col gap-4
                    px-[clamp(14px,4vw,28px)] pt-[clamp(22px,5vw,40px)] pb-20"
@@ -36,9 +33,7 @@ export default async function DashboardPage() {
           firstName={user.firstName}
         />
       </main>
-
-      <SiteFooter />
-    </div>
+    </SiteShell>
   );
 }
 

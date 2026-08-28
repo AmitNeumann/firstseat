@@ -35,7 +35,7 @@ export function ProfileForm({
           name="firstName"
           defaultValue={firstName ?? ""}
           autoComplete="given-name"
-          placeholder="Amit"
+          placeholder="First name"
           errors={state?.errors?.firstName}
           maxLength={40}
         />
@@ -44,7 +44,7 @@ export function ProfileForm({
           name="lastName"
           defaultValue={lastName ?? ""}
           autoComplete="family-name"
-          placeholder="Neumann"
+          placeholder="Last name"
           errors={state?.errors?.lastName}
           maxLength={40}
         />

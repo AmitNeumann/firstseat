@@ -27,8 +27,9 @@ export function SiteHeader({
 }) {
   return (
     <header
-      className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border
-                 bg-[rgba(252,251,247,0.93)] px-[clamp(14px,4vw,36px)] py-3.5 backdrop-blur-[10px]"
+      className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-border
+                 bg-[rgba(252,251,247,0.93)] px-[clamp(14px,4vw,36px)] py-3.5 backdrop-blur-[10px]
+                 shrink-0"
     >
       <Logo href={signedIn ? "/dashboard" : "/"} />
 

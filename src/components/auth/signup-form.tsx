@@ -4,7 +4,7 @@ import { useActionState, useSyncExternalStore } from "react";
 
 import { signup } from "@/lib/auth/actions";
 import { AuthOrDivider, GoogleSignInButton } from "@/components/auth/google-button";
-import { Field } from "@/components/auth/form-fields";
+import { Field, PasswordField } from "@/components/auth/form-fields";
 import { FormAlert, SubmitButton, TextField } from "@/components/forms/fields";
 import { DEFAULT_TIMEZONE } from "@/lib/auth/schemas";
 
@@ -45,7 +45,7 @@ export function SignupForm() {
             name="firstName"
             defaultValue={state?.firstName ?? ""}
             autoComplete="given-name"
-            placeholder="Amit"
+            placeholder="First name"
             errors={state?.errors?.firstName}
             maxLength={40}
           />
@@ -54,7 +54,7 @@ export function SignupForm() {
             name="lastName"
             defaultValue={state?.lastName ?? ""}
             autoComplete="family-name"
-            placeholder="Neumann"
+            placeholder="Last name"
             errors={state?.errors?.lastName}
             maxLength={40}
           />
@@ -70,10 +70,9 @@ export function SignupForm() {
           errors={state?.errors?.email}
         />
 
-        <Field
+        <PasswordField
           label="Password"
           name="password"
-          type="password"
           autoComplete="new-password"
           placeholder="••••••••"
           hint="At least 8 characters."
