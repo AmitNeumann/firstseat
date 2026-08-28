@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import * as z from "zod";
 
 import { ensureAppUser, requireAppUser } from "@/lib/auth/dal";
+import { deleteSignedInAuthUser } from "@/lib/auth/delete-auth-user";
 import { OAUTH_TZ_COOKIE } from "@/lib/auth/oauth-timezone";
 import {
   DEFAULT_TIMEZONE,
@@ -272,6 +273,49 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
 
   redirect("/login");
+}
+
+/**
+ * Permanently deletes the signed-in person's application data and Auth user.
+ *
+ * The id never comes from the form: `requireAppUser()` reads it from a verified JWT, so
+ * this cannot be aimed at someone else. Prisma cascades watches → drop alerts →
+ * notifications. Auth is removed via the caller's own session token.
+ */
+export async function deleteAccount(
+  _previousState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  if (field(formData, "confirm") !== "delete-account") {
+    return { message: "Account deletion was not confirmed." };
+  }
+
+  const user = await requireAppUser();
+  const supabase = await createSupabaseServerClient();
+
+  // `getUser()` already ran inside `requireAppUser`. The session is read only to hand
+  // GoTrue the access token for `DELETE /user` — not to decide who is signed in.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+
+  if (!accessToken) {
+    return { message: "Please sign in again, then try deleting your account." };
+  }
+
+  await prisma.user.delete({ where: { id: user.id } });
+
+  const authDeleted = await deleteSignedInAuthUser(accessToken);
+
+  if (!authDeleted) {
+    // App rows are gone (cascaded). A leftover Auth user cannot see watches, and the
+    // next sign-in would recreate an empty `users` row via `ensureAppUser`.
+    console.error("[auth] application row deleted but Auth user remains:", user.id);
+  }
+
+  await supabase.auth.signOut();
+  redirect("/");
 }
 
 /**

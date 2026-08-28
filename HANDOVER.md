@@ -3,7 +3,7 @@
 This document is the single source of truth for continuing work on FirstSeat. It assumes
 zero prior context. Read it top to bottom before making changes.
 
-**Last updated:** 27 August 2026
+**Last updated:** 28 August 2026
 **Course deadline:** 6 September 2026
 **Course brief:** `~/Desktop/fullstack project.docx` (RUNI CS 2026, "Become a Full-Stack Engineer")
 
@@ -15,10 +15,10 @@ zero prior context. Read it top to bottom before making changes.
 | --- | --- |
 | **Current branch** | `feat/watches` and `main` both track production. Check `git log -5 --oneline` rather than trusting a hash here. |
 | **Working tree** | check `git status -sb`. |
-| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, **Forgot password** (`/forgot-password` → email link → `/reset-password`), and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** (preview verified locally; production needs deploy + external minute cron + Resend domain — §0) |
+| **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, **Forgot password** (`/forgot-password` → email link → `/reset-password`), and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone, **Delete your account**), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** from `FirstSeat <alerts@firstseat.xyz>` (preview verified locally; production still needs the external minute cron — §0) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
-| **What does not exist yet** | minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), Resend domain so alerts can reach any inbox, most course documents + presentation (§8) |
-| **Tests** | Vitest, 11 files, **220 tests passing**. No component or end-to-end tests yet |
+| **What does not exist yet** | minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), most course documents + presentation (§8) |
+| **Tests** | Vitest, 12 files, **224 tests passing**. No component or end-to-end tests yet |
 | **Live site** | https://firstseat-lemon.vercel.app — **the real product**. Placeholder is gone. Verified 27 Aug 2026: email sign-in, Google sign-in, create a watch. |
 
 ### What's left, in this order
@@ -50,10 +50,9 @@ already in place.
    Hobby will deploy; a minute-level expression **fails the production build**. The
    external ping is what actually makes alerts fire on time. The route 401s without the
    secret.
-6. **Verify a domain in Resend** (or another sending approach) so alert mail can go to
-   **any** user. The current from-address `FirstSeat <onboarding@resend.dev>` only
-   delivers to the Resend account owner. Until a domain is verified, production alerts
-   still cannot reach arbitrary inboxes.
+6. ~~**Verify a domain in Resend**~~ **Done.** `firstseat.xyz` is verified. Alerts send
+   from `FirstSeat <alerts@firstseat.xyz>` so they can reach any registered user, not
+   only the Resend account owner.
 7. **The six required documents + the presentation** (§8), including rewriting
    `README.md` for local run.
 
@@ -109,10 +108,10 @@ from manually tracking release schedules across several booking platforms.
 | Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, Google OAuth, forgot-password, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
 | UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
-| Testing | Vitest 4.1.11 | ✅ 220 unit tests passing (11 files); ❌ no component or E2E tests |
+| Testing | Vitest 4.1.11 | ✅ 224 unit tests passing (12 files); ❌ no component or E2E tests |
 | Hosting | Vercel, auto-deploys on push to `main` | ✅ production serving the real app (`50ed4f9`) |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
-| Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. Production: Vercel env + external minute cron (Hobby is daily) + Resend domain. See §0 and §5 |
+| Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. From `FirstSeat <alerts@firstseat.xyz>`. Production still needs the external minute cron (Hobby is daily). See §0 and §5 |
 | AI parse endpoint | Gemini (`GEMINI_API_KEY`, server-only) | ✅ create-watch Describe it only. Landing Try it is a **local** Minetta parser (no Gemini) |
 
 There is deliberately **no** UI component library, form library, date library or timezone
@@ -334,7 +333,7 @@ firstseat/
     │   │   ├── reset-password-form.tsx
     │   │   └── sign-out-button.tsx
     │   ├── restaurants/            ← catalog, restaurant-card (typographic, no photo)
-    │   ├── settings/               ← settings-card, profile-form
+    │   ├── settings/               ← settings-card, profile-form, delete-account
     │   ├── legal/                  ← LegalDocument: reads content/*.md, Fraunces title / Newsreader h2
     │   └── watches/
     │       ├── create-watch-form.tsx   ← Client Component, useActionState; original fields + helper copy
@@ -363,12 +362,13 @@ firstseat/
         ├── time.ts          ← pure civil-date/time helpers + IANA timezone checks + listIanaTimezones
         ├── auth/
         │   ├── dal.ts       ← getAuthUser, ensureAppUser, getAppUser, requireAppUser
-        │   ├── actions.ts   ← "use server": signup, login, signInWithGoogle, logout, updateSettings
+        │   ├── actions.ts   ← "use server": signup, login, signInWithGoogle, logout, updateSettings, deleteAccount
         │   ├── schemas.ts   ← Zod schemas + AuthFormState + SettingsFormState
         │   ├── display.ts   ← avatarInitials, greetingFirstName, displayFullName (pure, tested)
         │   ├── oauth-profile.ts ← Google / signup names from user_metadata (pure, tested)
         │   ├── oauth-timezone.ts ← short-lived cookie name for the Google redirect
         │   ├── safe-redirect.ts ← same-site `next` clamp + no-store redirect
+        │   ├── delete-auth-user.ts ← GoTrue DELETE /user with the caller's own JWT
         │   └── confirm-errors.ts  ← confirmation + Google OAuth failure messages
         ├── supabase/
         │   ├── env.ts       ← the two NEXT_PUBLIC_ vars, read and checked in one place
@@ -376,6 +376,7 @@ firstseat/
         │   └── server.ts    ← per-request server client
         └── watches/
             ├── drop-time.ts   ← ⭐ computeDropMoment — the pure heart of the product
+            ├── date-status.ts ← past dining day vs already-opened booking window
             ├── platforms.ts   ← platform registry: labels, hostnames, slug rules
             ├── schemas.ts     ← Create/Update/CancelWatchSchema, WatchFormState
             ├── actions.ts     ← "use server": createWatch, updateWatch, cancelWatch
@@ -388,8 +389,9 @@ firstseat/
             ├── parse-limits.ts ← PARSE_MAX_CHARS (safe to import from the client)
             └── format.ts      ← display formatting, incl. dual-timezone phrasing, countdown, open-window
 
-tests/                       ← Vitest, 220 tests
+tests/                       ← Vitest, 224 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
+├── date-status.test.ts      ← past dining date vs already-opened window
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
 ├── seed-validation.test.ts  ← the hand-entered-data schema
 ├── restaurant-search.test.ts ← picker search + catalog pills/filters
@@ -772,7 +774,11 @@ nothing personal in it. The page is still behind `requireAppUser()`.
 **Settings `/settings` — designed**
 
 One `SettingsCard` with `ProfileForm`: first name, last name, email (read-only), timezone,
-one **Save**. `updateSettings` in `src/lib/auth/actions.ts` writes names and timezone in
+one **Save**, then a clay-coloured **Delete your account** text link at the bottom of the
+same card. Confirm is a dialog (same pattern as deleting a watch). `deleteAccount` is scoped by
+`requireAppUser()` — the id never comes from the form. Prisma `user.delete` cascades
+watches → drop alerts → notifications, then GoTrue `DELETE /user` with the caller's JWT
+removes Auth, then `signOut` and redirect to `/`. `updateSettings` writes names and timezone in
 one go, scoped by `user.id`. Empty names store `null`. Timezone options come from
 `listIanaTimezones()` (`Intl.supportedValuesOf("timeZone")`). Success redirects with
 `?saved=1`. This timezone is the clock My Watches uses for "your time".
@@ -837,7 +843,7 @@ restaurants. Every Prisma read of user data stays scoped by `userId`.
 | Privacy Policy | `/privacy` | ✅ designed, public (`content/privacy.md`) |
 | My Watches | `/dashboard` | ✅ designed (`Hi {name}! Your Watches` when named; avatar menu shows name + email; New watch on the page; live countdown; honey dual-timezone panel) |
 | Restaurants catalog | `/restaurants` | ✅ designed (typographic cards; chips from real platforms; autocomplete combobox; **known minor issue:** filter-on-Enter is not fully working). Click → create watch |
-| Settings | `/settings` | ✅ designed (one card: name, email, timezone; `updateSettings`) |
+| Settings | `/settings` | ✅ designed (one profile card; red **Delete your account** link at the bottom) |
 | Create / edit watch | `/watches/new`, `/watches/[id]/edit` | ✅ original layout kept. Create-watch **Describe it** parses via Gemini into a confirmation card (`Create this watch` / `Edit details`). Live `DropPreview` is still on the form |
 
 Guidance that still applies:
@@ -858,7 +864,7 @@ written when the watch is created. The mailer **does not** call `computeDropMome
 **How it is split (explain this in the presentation):**
 
 1. **`renderAlertEmail`** (`src/lib/alerts/email.ts`) — pure. Subject, text, and HTML.
-   From address: `FirstSeat <onboarding@resend.dev>` (Resend's test domain). No Resend,
+   From address: `FirstSeat <alerts@firstseat.xyz>` (verified domain). No Resend,
    no Prisma, unit-tested.
 2. **`sendAlertEmail`** (`src/lib/alerts/send.ts`) — server-only. Reads `RESEND_API_KEY`
    from `process.env` (never `NEXT_PUBLIC_`). Hands the composed mail to Resend.
@@ -875,8 +881,8 @@ written when the watch is created. The mailer **does not** call `computeDropMome
    localhost. Minute-level delivery still needs the external ping below.
 6. **Local proof:** `npm run alerts:send-test` (`scripts/send-test-alert.ts`). Sends one
    preview using the latest scheduled watch, prefixes the subject with `[Preview]`, and
-   **does not** mark the row SENT. Verified 26 August 2026 (L'Artusi). Resend's test
-   domain only delivers to the account owner's address.
+   **does not** mark the row SENT. Verified 26 August 2026 (L'Artusi). Sends from
+   `FirstSeat <alerts@firstseat.xyz>`.
 
 **Secrets stay server-side.** `RESEND_API_KEY` and `CRON_SECRET` are never `NEXT_PUBLIC_`.
 Never commit `.env.local`. Add both on Vercel **before** merging (§0).
@@ -886,9 +892,9 @@ deploy, ping `/api/cron/alerts` every minute from a free external cron (e.g. cro
 with `Authorization: Bearer $CRON_SECRET`. `vercel.json` stays on a daily schedule so
 Hobby can deploy; do not put `* * * * *` back.
 
-**Resend test domain** (`onboarding@resend.dev`) only delivers to the account owner.
-Verify a sending domain in Resend (or switch from-address) before expecting alerts to
-reach arbitrary users.
+**Sending domain is verified.** Alerts send from `FirstSeat <alerts@firstseat.xyz>` and
+can reach any registered user's inbox. The remaining production gap is the external
+minute cron, not the from-address.
 
 ### ✅ Built: the AI natural-language parse endpoint (complete)
 
@@ -926,12 +932,10 @@ free text ──▶ Gemini ──▶ raw JSON ──▶ Zod parse ──▶ reso
 Do not wire the landing Try it card to this endpoint. It stays a local Minetta-only
 parser so signed-out visitors never spend Gemini quota.
 
-### 🔜 Then: merge `feat/watches` to `main`
+### Production follow-up
 
-**This is the next step.** Vercel env vars and Supabase production redirects are **done**.
-Merge `feat/watches` → `main` and push `main` (that deploys). Then check live Prisma
-migrations and verify the site. After that: external minute cron, Resend domain, then the
-six documents + presentation (§8).
+`feat/watches` is already on `main`. After this push: confirm Vercel deployed, then the
+external minute cron, then the six documents + presentation (§8).
 
 ---
 
@@ -1147,7 +1151,7 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **220 unit tests over 11 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, Google name / OAuth error mapping, and password-reset schemas. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 6 | Test code | 🟡 **Partly** | Vitest installed; **224 unit tests over 12 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, Google name / OAuth error mapping, password-reset schemas, and past-date vs opened-window copy. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and the parse endpoint's 30/user/day in-memory rate limit |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
@@ -1160,9 +1164,8 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 - **Working product features.** **Feature-complete** and **in production**
   (https://firstseat-lemon.vercel.app): email + Google auth (Google button below the
   email/password form), forgot-password, watches, catalog, Settings, Terms/Privacy,
-  Gemini Describe it, Resend alert mailer + cron route. Verified 27 Aug 2026: email
-  sign-in, Google, create a watch. Next: external minute cron, then Resend domain for
-  non-owner inboxes.
+  Gemini Describe it, Resend alert mailer + cron route from `alerts@firstseat.xyz`.
+  Verified 27 Aug 2026: email sign-in, Google, create a watch. Next: external minute cron.
 - The brief expects you to **understand and be able to explain every technical decision**, since
   AI assistance is permitted but responsibility for the code is yours. This document exists partly
   to support that.
@@ -1177,7 +1180,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (220 tests)
+npm test                    # Vitest, single run (224 tests)
 npm run alerts:send-test    # send one [Preview] email; does not mark the alert SENT
 npm run test:watch          # Vitest in watch mode
 
@@ -1215,8 +1218,8 @@ git check-ignore -v .env.local        # confirm secrets stay ignored
 - **Never put secrets in chat or in git.** Check `git diff --cached` before every commit.
   Only `.env.example` is tracked; `.env.local` is gitignored and **must never be committed**.
   `GEMINI_API_KEY`, `RESEND_API_KEY`, and `CRON_SECRET` are server-only — never `NEXT_PUBLIC_`.
-- **Production is live.** Next: external minute cron for alerts, then Resend domain,
-  then the course documents (§8).
+- **Production is live.** Next: external minute cron for alerts, then the course
+  documents (§8). Alerts send from `FirstSeat <alerts@firstseat.xyz>`.
 - **Keep working:** auth (`getUser()` / `requireAppUser()`), `computeDropMoment`, the
   create-watch ARIA combobox, and the dual-timezone display.
 - **Prefer being able to explain a decision over adding a feature.** That is what the brief grades.

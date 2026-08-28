@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { FormAlert } from "@/components/forms/fields";
+import { DeleteAccount } from "@/components/settings/delete-account";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SiteFooter } from "@/components/site/footer";
@@ -54,6 +55,7 @@ export default async function SettingsPage({
             timezone={user.timezone}
             timezones={options}
           />
+          <DeleteAccount />
         </SettingsCard>
       </main>
 

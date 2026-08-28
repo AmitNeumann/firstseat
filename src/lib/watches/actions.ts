@@ -15,6 +15,7 @@ import {
   parseCivilDate,
   timeOfDayFromDate,
 } from "@/lib/time";
+import { PAST_DINING_DATE_MESSAGE } from "@/lib/watches/date-status";
 import { computeDropMoment, DEFAULT_ALERT_LEAD_MINUTES } from "@/lib/watches/drop-time";
 import { formatInstant } from "@/lib/watches/format";
 import {
@@ -103,7 +104,10 @@ function planAlerts({
   }
 
   if (compareCivilDates(target, today) < 0) {
-    return { ok: false, state: { errors: { targetDate: ["That date has already passed."] } } };
+    return {
+      ok: false,
+      state: { errors: { targetDate: [PAST_DINING_DATE_MESSAGE] } },
+    };
   }
 
   const latestSensible = civilDateInZone(

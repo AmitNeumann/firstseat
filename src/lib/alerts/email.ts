@@ -11,7 +11,7 @@ import { greetingFirstName } from "@/lib/auth/display";
 import { DEFAULT_ALERT_LEAD_MINUTES } from "@/lib/watches/drop-time";
 import { MEAL_LABELS, formatDate, formatInstant, platformLabel } from "@/lib/watches/format";
 
-export const ALERT_FROM = "FirstSeat <onboarding@resend.dev>";
+export const ALERT_FROM = "FirstSeat <alerts@firstseat.xyz>";
 
 export type AlertEmailInput = {
   firstName: string | null;
