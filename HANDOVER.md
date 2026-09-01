@@ -3,7 +3,7 @@
 This document is the single source of truth for continuing work on FirstSeat. It assumes
 zero prior context. Read it top to bottom before making changes.
 
-**Last updated:** 28 August 2026
+**Last updated:** 1 September 2026
 **Course deadline:** 6 September 2026
 **Course brief:** `~/Desktop/fullstack project.docx` (RUNI CS 2026, "Become a Full-Stack Engineer")
 
@@ -18,7 +18,7 @@ zero prior context. Read it top to bottom before making changes.
 | **What works locally** | designed signed-out landing (Minetta-only Try it: **local** date/party/meal parse, full watch preview via `computeDropMoment`, year-roll if that window already opened — **no Gemini**), designed sign-in/sign-up **with first/last name**, **Continue with Google**, **Forgot password** (`/forgot-password` → email link → `/reset-password`), and a **By continuing…** Terms/Privacy line, designed My Watches (`/dashboard`: avatar menu shows **name + email**, `Hi {name}! Your Watches` when named, New watch on the page), designed Restaurants catalog (`/restaurants`, typographic cards, autocomplete combobox — known minor Enter-to-filter issue), public **Terms** (`/terms`) and **Privacy** (`/privacy`), Settings (`/settings`: one card — name, email, timezone, **Delete your account**), create/edit watch (`/watches/new`: original Watch a table layout plus a cream **Describe it** field that parses via Gemini into a one-click confirmation card), logout, email confirmation; timezone-aware drop-time calculation; 8 real seeded restaurants; **alert emails via Resend** from `FirstSeat <alerts@firstseat.xyz>` (preview verified locally; production still needs the external minute cron — §0) |
 | **What is not designed yet** | nothing outstanding in the design phase. Screens above are the designed set. |
 | **What does not exist yet** | minute-level alert cron on Hobby (external ping of `/api/cron/alerts`), most course documents + presentation (§8) |
-| **Tests** | Vitest, 13 files, **227 tests passing**. No component or end-to-end tests yet |
+| **Tests** | Vitest, 18 files, **238 tests passing** (unit + RTL UI + schema/query contracts). No live Postgres or E2E |
 | **Live site** | https://firstseat-lemon.vercel.app — **the real product**. Placeholder is gone. Verified 27 Aug 2026: email sign-in, Google sign-in, create a watch. |
 
 ### What's left, in this order
@@ -108,7 +108,7 @@ from manually tracking release schedules across several booking platforms.
 | Auth | Supabase Auth via `@supabase/ssr` 0.12.4 | ✅ signup, login, logout, Google OAuth, forgot-password, `users` row on first sign-in |
 | Seeding | `tsx` + `dotenv`, `npm run db:seed` | ✅ 8 real NYC restaurants (with optional `imageUrl` paths) |
 | UI design | Fraunces / Newsreader / Manrope + cream/clay/honey/apricot tokens | 🟡 **design phase complete** |
-| Testing | Vitest 4.1.11 | ✅ 227 unit tests passing (13 files); ❌ no component or E2E tests |
+| Testing | Vitest 4.1.11 + RTL + jsdom | ✅ 238 tests passing (18 files): unit, basic UI, schema/query contracts; ❌ no live Postgres or E2E |
 | Hosting | Vercel, auto-deploys on push to `main` | ✅ production serving the real app (`50ed4f9`) |
 | Runtime | Node v24.16.0, npm 11.13.0 | — |
 | Alert delivery | Resend + claim-then-send dispatch + cron route | ✅ built locally; preview send verified. From `FirstSeat <alerts@firstseat.xyz>`. Production still needs the external minute cron (Hobby is daily). See §0 and §5 |
@@ -279,7 +279,7 @@ firstseat/
 ├── eslint.config.mjs
 ├── postcss.config.mjs       ← wires Tailwind v4
 ├── prisma.config.ts         ← Prisma 7 config: loads .env.local, points CLI at DIRECT_URL, seed cmd
-├── vitest.config.mts        ← mirrors the @/* path alias so tests resolve like the app
+├── vitest.config.mts        ← @/* alias; jsdom for `*.test.tsx`; setup-dom for RTL
 ├── public/restaurants/      ← .gitkeep only; seed still has imageUrl paths, but catalog
 │                              cards are typographic (no photo slot)
 ├── content/                 ← source markdown for public legal pages
@@ -390,7 +390,7 @@ firstseat/
             ├── parse-limits.ts ← PARSE_MAX_CHARS (safe to import from the client)
             └── format.ts      ← display formatting, incl. dual-timezone phrasing, countdown, open-window
 
-tests/                       ← Vitest, 227 tests
+tests/                       ← Vitest, 238 tests
 ├── drop-time.test.ts        ← the big one: DST, calendar arithmetic, invalid input
 ├── date-status.test.ts      ← past dining date vs already-opened window
 ├── platforms.test.ts        ← slug rules, labels, lookalike-host rejection
@@ -403,7 +403,14 @@ tests/                       ← Vitest, 227 tests
 ├── watch-parse.test.ts      ← restaurant resolve, untrusted JSON, rate limit
 ├── alert-email.test.ts      ← email copy + HTML escape + cron Bearer check
 ├── welcome-email.test.ts    ← welcome copy + HTML escape
-└── oauth-profile.test.ts    ← Google name mapping, open-redirect clamp, OAuth login errors
+├── oauth-profile.test.ts    ← Google name mapping, open-redirect clamp, OAuth login errors
+├── database.test.ts         ← CASCADE FKs + watch query userId scoping (no live Postgres)
+├── setup-dom.ts             ← RTL cleanup + jest-dom matchers
+└── ui/
+    ├── watch-card.test.tsx      ← name, countdown, delete confirmation dialog
+    ├── create-watch-form.test.tsx ← restaurant / date / party / meal / submit
+    ├── password-field.test.tsx  ← show/hide eye toggle
+    └── delete-account.test.tsx  ← Settings delete confirmation dialog
 ```
 
 ### How a sign-in actually flows
@@ -1153,7 +1160,7 @@ count: "better a small, clear, useful, secure, well-built product than a large, 
 | 3 | Product spec document | ❌ **Outstanding** | Problem, users, customer, business goals, required capabilities, core user flows. §1 here is a first draft to expand |
 | 4 | Technical design document | 🟡 **Partly** | Schema, folder structure, auth and watch flows, validation and error handling are captured here; still needs state management and UX |
 | 5 | Test spec document | ❌ **Outstanding** | Core features, invalid inputs, business flows, permissions, DB, edge cases, basic UI. The existing tests are raw material — write the spec from what they already assert, then fill the gaps |
-| 6 | Test code | 🟡 **Partly** | Vitest installed; **227 unit tests over 13 files**, covering the drop-time calculation (incl. DST), platform slugs, seed validation, watch schemas, restaurant search / catalog filters, the Minetta landing parser, timezone Settings, name/initials / signup-name / displayFullName, parse-proposal / restaurant-resolve / rate-limit, alert email copy + cron Bearer check, welcome email copy, Google name / OAuth error mapping, password-reset schemas, and past-date vs opened-window copy. Missing: component tests (React Testing Library) and E2E (Playwright), especially the authorization paths — that another user's watch 404s is currently verified only by reading the code |
+| 6 | Test code | 🟡 **Partly** | Vitest; **238 tests over 18 files**. Unit coverage as before, plus RTL UI tests (watch card, create-watch form, password eye toggle, delete-account dialog) and data-layer contracts (Prisma/SQL CASCADE, `listWatchesForUser` / `getWatchForUser` scoped by `userId`). No test opens the live Supabase database — local and production share it. Still missing: E2E (Playwright) |
 | 7 | Scale document | ❌ **Outstanding** | Good raw material exists: indexes, pooled vs direct connections, `React.cache` in the DAL, static prerendering, pagination plans, and the parse endpoint's 30/user/day in-memory rate limit |
 | 8 | Security document | ❌ **Outstanding** | Plenty of material now: Supabase Auth, `getUser()` vs `getSession()`, the DAL as the authorization gate, **the RLS/Prisma caveat**, Zod validation, non-enumerable login errors, the open-redirect guard on `/auth/confirm`, the `no-store` headers on session responses, secret handling, the `npm audit` triage |
 | 9 | Local run instructions | 🟡 **Partly** | §7 here covers it; `README.md` is still the default create-next-app text and must be rewritten |
@@ -1182,7 +1189,7 @@ npm run dev                 # dev server at http://localhost:3000
 npm run build               # production build (runs prisma generate first)
 npm run lint                # ESLint
 npx tsc --noEmit            # typecheck without emitting
-npm test                    # Vitest, single run (227 tests)
+npm test                    # Vitest, single run (238 tests)
 npm run alerts:send-test    # send one [Preview] email; does not mark the alert SENT
 npm run test:watch          # Vitest in watch mode
 
