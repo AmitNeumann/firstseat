@@ -931,7 +931,7 @@ free text ──▶ Gemini ──▶ raw JSON ──▶ Zod parse ──▶ reso
 | Piece | Where |
 | --- | --- |
 | Route | `POST /api/watches/parse` — signed-in via `getAppUser()` (401 if not). Does not write a watch. |
-| Model | `gemini-flash-lite-latest` through `@google/genai`. `gemini-2.5-flash` 404s for new keys; `gemini-3.5-flash` works but spends ~10s thinking. Timeout 12s. No retries. Do **not** send `thinkingBudget: 0` — this alias returns 400 `INVALID_ARGUMENT`. Prompt is three short lines; restaurant matching is DB-side after the call. Logs `[watches/parse] gemini` and `[watches/parse] timing`. |
+| Model | `gemini-3.1-flash-lite` through `@google/genai`. Pinned after `gemini-flash-lite-latest` started 503-ing ("high demand") in Sep 2026, which made every Describe it call fail. `gemini-2.5-flash` / `gemini-2.0-flash-lite` 404 for this key. Timeout 12s. No retries. Do **not** send `thinkingBudget: 0`. Prompt is three short lines; restaurant matching is DB-side after the call. Logs `[watches/parse] gemini` and `[watches/parse] timing`. |
 | Key | `GEMINI_API_KEY` in `.env.local` — **never** `NEXT_PUBLIC_`. Placeholder is in `.env.example`. Add it to Vercel before a preview that should parse. |
 | Untrusted JSON | `proposeWatchFields` in `src/lib/watches/parse.ts` (tested). Restaurant match uses the same name logic as the picker; unknown names are refused, not invented. |
 | Rate limit | 30 calls / user / day in process memory (`parse-rate-limit.ts`). Resets on deploy; not shared across Vercel instances. Input capped at 280 characters. |

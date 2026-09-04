@@ -3,12 +3,14 @@ import "server-only";
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * Current Flash-Lite alias on the Gemini free tier.
+ * Pinned Flash-Lite on the Gemini free tier.
  *
- * `gemini-2.5-flash` 404s for new keys. `gemini-3.5-flash` works but spends ~10s
- * thinking. `gemini-flash-lite-latest` is the fast extraction model on this key.
+ * `gemini-flash-lite-latest` (and `gemini-3.5-flash-lite`) started 503-ing with
+ * "high demand" in September 2026, which made every Describe it sentence fail.
+ * `gemini-2.5-flash` / `gemini-2.0-flash-lite` now 404 for this key.
+ * `gemini-3.1-flash-lite` still extracts in ~3s. Do not send `thinkingBudget: 0`.
  */
-export const PARSE_MODEL = "gemini-flash-lite-latest";
+export const PARSE_MODEL = "gemini-3.1-flash-lite";
 
 /** Slow valid calls have been ~8–12s; 20s left the spinner hanging on a dead request. */
 export const PARSE_TIMEOUT_MS = 12_000;
